@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Canvas } from "@react-three/fiber"
 import { Environment, OrbitControls, useTexture } from "@react-three/drei"
 import { FloatingMirror } from "@/components/FloatingMirror"
@@ -8,16 +8,45 @@ import { ProjectContent } from "@/components/ProjectContent"
 import { CameraController } from "@/components/CameraController"
 import { CustomFrame } from "@/components/CustomFrame"
 import * as THREE from 'three'
+import { PROJECTS } from "./data"
 
-export const CustomEnvironment = () => {
-  const texture = useTexture("/images/frustration.jpg")
+interface CustomEnvironmentProps {
+  projectsMainImages: string[];
+  currentProjectIndex: number;
+}
+
+export const CustomEnvironment: React.FC<CustomEnvironmentProps> = ({
+  projectsMainImages,
+  currentProjectIndex,
+}) => {
+  const textures = useTexture(projectsMainImages)
+  // const texture = useTexture("/images/frustration.jpg")
+  const texture = useTexture(projectsMainImages[currentProjectIndex])
+  console.log({ textures, texture, projectsMainImages });
+
   texture.mapping = THREE.EquirectangularReflectionMapping
+
+  if (currentProjectIndex === -1) return;
+  const currentTexture = textures[currentProjectIndex];
+
+  // Ensure correct mapping when texture changes
+  // useEffect(() => {
+  //   if (currentTexture) {
+  //     currentTexture.mapping = THREE.EquirectangularReflectionMapping;
+  //     currentTexture.colorSpace = THREE.SRGBColorSpace;
+  //   }
+  // }, [currentTexture]);
+
 
   return (
     <Environment
-    // preset="city"
-    // background
+      // preset="city"
+      // background
       map={texture}
+    // map={currentTexture}
+    // background
+    // backgroundBlurriness={0.5}
+    // backgroundIntensity={0.3}
     />
   )
 }
@@ -61,6 +90,27 @@ export default function Component() {
     setIsClosing(false)
   }
 
+  const [currentProject, setCurrentProject] = useState<typeof PROJECTS[number]>(PROJECTS[0])
+  const projectsMainImages = PROJECTS.map((project) => project.images[0])
+  const currentProjectIndex = PROJECTS.findIndex((project) => project.id === currentProject.id)
+
+  const goToNextProject = () => {
+    setCurrentProject((prev) => {
+      const currentIndex = PROJECTS.findIndex((project) => project.id === prev.id)
+      const nextIndex = (currentIndex + 1) % PROJECTS.length
+      return PROJECTS[nextIndex]
+    })
+  }
+
+  const goToPreviousProject = () => {
+    setCurrentProject((prev) => {
+      const currentIndex = PROJECTS.findIndex((project) => project.id === prev.id)
+      const prevIndex = (currentIndex - 1 + PROJECTS.length) % PROJECTS.length
+      return PROJECTS[prevIndex]
+    })
+  }
+
+
   return (
     <div className="w-full h-screen bg-black relative">
       {/* Fixed Header - Always visible */}
@@ -91,11 +141,32 @@ export default function Component() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url(/images/frustration.jpg)",
+          // backgroundImage: "url(/images/frustration.jpg)",
+          backgroundImage: `url(${currentProject.images[0]})`,
           filter: "blur(20px) brightness(0.3)",
           transform: "scale(1.2)", // Slightly scale up to hide blur edges
         }}
       />
+
+      {/* Previous and Next arrows */}
+      <button
+        onClick={goToPreviousProject}
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
+        aria-label="Previous Project"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button
+        onClick={goToNextProject}
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
+        aria-label="Next Project"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
 
       {/* Dark overlay for better contrast */}
       {/* <div className="absolute inset-0 bg-black/60" /> */}
@@ -129,11 +200,20 @@ export default function Component() {
           preset="city"
         // files='/images/frustration.jpg'
         /> */}
-        <CustomEnvironment />
+        <CustomEnvironment
+          projectsMainImages={
+            projectsMainImages
+          }
+          currentProjectIndex={
+            currentProjectIndex
+          }
+        />
 
         {/* Floating mirror */}
         {/* <FloatingMirror onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning} /> */}
-        <CustomFrame onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning} /> />
+        <CustomFrame onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning}
+          image={currentProject.images[0]}
+        />
 
         {/* Controls for interaction - disabled during movement */}
         <OrbitControls
@@ -148,7 +228,9 @@ export default function Component() {
       </Canvas>
 
       {/* Project content overlay */}
-      <ProjectContent isVisible={showContent} isClosing={isClosing} onClose={handleClose} />
+      {currentProject && <ProjectContent isVisible={showContent} isClosing={isClosing} onClose={handleClose}
+        currentProject={currentProject}
+      />}
     </div>
   )
 }

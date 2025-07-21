@@ -19,20 +19,25 @@ type GLTFResult = GLTF & {
     }
 }
 
-export function CustomFrame(props: JSX.IntrinsicElements['group']) {
+interface CustomFrameProps {
+    image: string;
+    onThroughPlane: () => void
+    isMovingThrough: boolean
+
+}
+
+export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameProps) {
     const {
         onThroughPlane,
         isMovingThrough,
-    } = props as {
-        onThroughPlane: () => void
-        isMovingThrough: boolean
-    }
+        image,
+    } = props
     const groupRef = useRef()
     const planeRef = useRef()
 
 
     const { nodes, materials } = useGLTF('/custom-frame.glb') as GLTFResult
-    const texture = useTexture("/images/frustration.jpg")
+    const texture = useTexture(image)
     const metalBasePath = '/images/Metal003_1K-JPG'
     const metalBaseName = 'Metal003_1K-JPG'
     const combinedPath = `${metalBasePath}/${metalBaseName}`
@@ -89,7 +94,6 @@ export function CustomFrame(props: JSX.IntrinsicElements['group']) {
             // scale={0.04}
             scale={0.02}
             ref={groupRef}
-
             onPointerMove={handleMouseMove}
 
         >
