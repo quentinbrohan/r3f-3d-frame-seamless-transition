@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Canvas } from "@react-three/fiber"
-import { Environment, OrbitControls, useTexture } from "@react-three/drei"
+import { CameraControls, Environment, OrbitControls, useTexture } from "@react-three/drei"
 import { FloatingMirror } from "@/components/FloatingMirror"
 import { ProjectContent } from "@/components/ProjectContent"
 import { CameraController } from "@/components/CameraController"
@@ -10,6 +10,7 @@ import { CustomFrame } from "@/components/CustomFrame"
 import * as THREE from 'three'
 import { PROJECTS } from "./data"
 import Header from "@/components/Header"
+import CarouselFrame from "@/components/CarouselFrame"
 
 interface CustomEnvironmentProps {
   projectsMainImages: string[];
@@ -95,12 +96,20 @@ export default function Component() {
   const projectsMainImages = PROJECTS.map((project) => project.images[0])
   const currentProjectIndex = PROJECTS.findIndex((project) => project.id === currentProject.id)
 
+  const [carouselRotation, setCarouselRotation] = useState(0)
+
+
+  const anglePerItem = (2 * Math.PI) / projectsMainImages.length
+  const numFrames = projectsMainImages.length
+  const radius = 2.5
+
   const goToNextProject = () => {
     setCurrentProject((prev) => {
       const currentIndex = PROJECTS.findIndex((project) => project.id === prev.id)
       const nextIndex = (currentIndex + 1) % PROJECTS.length
       return PROJECTS[nextIndex]
     })
+    setCarouselRotation((prev) => prev - anglePerItem)
   }
 
   const goToPreviousProject = () => {
@@ -109,8 +118,34 @@ export default function Component() {
       const prevIndex = (currentIndex - 1 + PROJECTS.length) % PROJECTS.length
       return PROJECTS[prevIndex]
     })
+    setCarouselRotation((prev) => prev + anglePerItem)
   }
 
+
+  //
+  // const initialRotationOffset = Math.PI // 180°
+
+  // // Start with targetRotation so frame 0 is in front
+  // const [targetRotation, setTargetRotation] = useState(-initialRotationOffset)
+
+
+  // const handlePrev = () => {
+  //   setCurrentProject((prev) => {
+  //     const currentIndex = PROJECTS.findIndex((project) => project.id === prev.id)
+  //     const prevIndex = (currentIndex - 1 + PROJECTS.length) % PROJECTS.length
+  //     return PROJECTS[prevIndex]
+  //   })
+  //   setTargetRotation(prev => prev - (Math.PI) / numFrames)
+  // }
+
+  // const handleNext = () => {
+  //   setCurrentProject((prev) => {
+  //     const currentIndex = PROJECTS.findIndex((project) => project.id === prev.id)
+  //     const nextIndex = (currentIndex + 1) % PROJECTS.length
+  //     return PROJECTS[nextIndex]
+  //   })
+  //   setTargetRotation(prev => prev + (Math.PI) / numFrames)
+  // }
 
   return (
     <div className="w-full h-screen bg-black relative">
@@ -151,15 +186,18 @@ export default function Component() {
       {/* <div className="absolute inset-0 bg-black/60" /> */}
       <div className="absolute inset-0 bg-black/40" />
 
-      <Canvas camera={{ position: [0, 0, 5], fov: 50 }} shadows className="relative z-10">
+      <Canvas camera={{ position: [0, 0, 0], fov: 50 }}
+
+        shadows className="relative z-10">
         {/* Camera controller for seamless movement */}
-        <CameraController
+        {/* <CameraController
           isMovingThrough={isMovingThrough}
           isReturning={isReturning}
           onIntersection={handleIntersection}
           onMovementComplete={handleMovementComplete}
           onReturnComplete={handleReturnComplete}
-        />
+        /> */}
+        {/* <CameraControls /> */}
 
         {/* Lighting setup to match the screenshot */}
         <ambientLight intensity={0.2} />
@@ -190,20 +228,44 @@ export default function Component() {
 
         {/* Floating mirror */}
         {/* <FloatingMirror onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning} /> */}
-        <CustomFrame onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning}
+        {/* <CustomFrame onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning}
           image={currentProject.images[0]}
+        /> */}
+        {/* <group rotation={[0, carouselRotation, 0]}>
+          {projectsMainImages.map((img, i) => {
+            const angle = (i / numFrames) * Math.PI * 2
+            const x = Math.sin(angle) * radius
+            const z = Math.cos(angle) * radius
+
+            return (
+              <CustomFrame
+                onThroughPlane={handleStartMovement}
+                isMovingThrough={isMovingThrough || isReturning}
+                image={img}
+                key={i}
+                position={[x, 0, z]}
+                rotation={[0, angle + Math.PI, 0]}
+              />
+            )
+          })}
+        </group> */}
+        <CarouselFrame projectsMainImages={projectsMainImages}
+        onNext={goToNextProject}
+        // targetRotation={targetRotation} setTargetRotation={setTargetRotation}
         />
 
+
         {/* Controls for interaction - disabled during movement */}
-        <OrbitControls
-          enabled={!isMovingThrough && !showContent && !isReturning}
-          enablePan={false}
-          // enableZoom={true}
-          enableZoom={false}
-          enableRotate={true}
-          minDistance={3}
-          maxDistance={10}
-        />
+        {/* <OrbitControls
+            enabled={!isMovingThrough && !showContent && !isReturning}
+            enablePan={false}
+            // enableZoom={true}
+            enableZoom={false}
+            enableRotate={true}
+            minDistance={3}
+            maxDistance={10}
+          />
+        */}
       </Canvas>
 
       {/* Project content overlay */}
