@@ -25,6 +25,7 @@ interface CustomFrameProps {
     isMovingThrough: boolean
     position?: [number, number, number]
     rotation?: [number, number, number]
+    envMap?: THREE.Texture
 
 }
 
@@ -33,6 +34,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         onThroughPlane,
         isMovingThrough,
         image,
+        envMap,
     } = props
     const groupRef = useRef()
     const planeRef = useRef()
@@ -131,6 +133,9 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
                     displacementScale={0.1} // Adjust to taste
                     metalness={1}
                     roughness={0.1}
+                    envMap={envMap}
+                    envMapIntensity={3}  // try 2–5 to see what fits best
+
                 />
                 {/* <meshStandardMaterial color="#c0c0c0" metalness={0.9} roughness={0.1} envMapIntensity={1.5} /> */}
             </mesh>

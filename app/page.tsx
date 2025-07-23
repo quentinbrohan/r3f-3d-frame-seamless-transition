@@ -1,16 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Canvas } from "@react-three/fiber"
-import { CameraControls, Environment, OrbitControls, useTexture } from "@react-three/drei"
-import { FloatingMirror } from "@/components/FloatingMirror"
+import Header from "@/components/Header"
+import MainScene from "@/components/MainScene"
 import { ProjectContent } from "@/components/ProjectContent"
-import { CameraController } from "@/components/CameraController"
-import { CustomFrame } from "@/components/CustomFrame"
+import { Environment, useTexture } from "@react-three/drei"
+import { Canvas } from "@react-three/fiber"
+import { useControls } from "leva"
+import { useEffect, useState } from "react"
 import * as THREE from 'three'
 import { PROJECTS } from "./data"
-import Header from "@/components/Header"
-import CarouselFrame from "@/components/CarouselFrame"
 
 interface CustomEnvironmentProps {
   projectsMainImages: string[];
@@ -53,6 +51,40 @@ export const CustomEnvironment: React.FC<CustomEnvironmentProps> = ({
   )
 }
 
+// function PlanesAroundCamera({
+//   projectsMainImages,
+//   currentProjectIndex,
+// }) {
+//   const frontPlaneRef = useRef()
+//   const backPlaneRef = useRef()
+
+//   const texture = useTexture(projectsMainImages[currentProjectIndex])
+//   console.log({ texture, projectsMainImages });
+
+//   texture.mapping = THREE.EquirectangularReflectionMapping
+
+
+//   return (
+//     <>
+//       {/* Front plane: in front of camera, facing camera */}
+//       <mesh ref={frontPlaneRef} position={[0, 0, 5]} rotation={[0, 0, 0]}>
+//         <planeGeometry args={[2, 2]} />
+//         <meshBasicMaterial color="orange" />
+//       </mesh>
+
+//       {/* Back plane: behind camera, facing camera */}
+//       <mesh ref={backPlaneRef} position={[0, 0, 5]} rotation={[0, Math.PI, 0]}>
+//         <planeGeometry args={[10, 10]} />
+//         <meshBasicMaterial
+//         // color="blue"
+//         map={texture}
+
+//         />
+//       </mesh>
+//     </>
+//   )
+// }
+
 export default function Component() {
   const [isMovingThrough, setIsMovingThrough] = useState(false)
   const [isReturning, setIsReturning] = useState(false)
@@ -93,8 +125,12 @@ export default function Component() {
   }
 
   const [currentProject, setCurrentProject] = useState<typeof PROJECTS[number]>(PROJECTS[0])
+
+//   useEffect(() => {
+// alert(currentProject.name)
+//   },[currentProject.name])
   const projectsMainImages = PROJECTS.map((project) => project.images[0])
-  const currentProjectIndex = PROJECTS.findIndex((project) => project.id === currentProject.id)
+  // const currentProjectIndex = PROJECTS.findIndex((project) => project.id === currentProject.id)
 
   const [carouselRotation, setCarouselRotation] = useState(0)
 
@@ -147,12 +183,33 @@ export default function Component() {
   //   setTargetRotation(prev => prev + (Math.PI) / numFrames)
   // }
 
+  //
+  const [transition, setTransition] = useState(0)
+  // const [progress, set] = useControls(() => ({
+  //   value: { value: transition, min: 0, max: 1, step: 0.01 }
+  // }))
+
+  // useEffect(() => {
+  //   set({
+  //     value: transition
+  //   })
+  // }, [transition])
+
+  const [currentProjectIndex, setCurrentProjectIndex] = useState(PROJECTS.findIndex((project) => project.id === currentProject.id))
+  const [nextProjectIndex, setNextProjectIndex] = useState((currentProjectIndex + 1) % PROJECTS.length)
+
+  useEffect(() => {
+    const current = PROJECTS.find((p, i) => i === currentProjectIndex)
+    setCurrentProject(current)
+  },[currentProjectIndex])
+
+
   return (
     <div className="w-full h-screen bg-black relative">
       <Header />
 
       {/* Blurred background image */}
-      <div
+      {/* <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           // backgroundImage: "url(/images/frustration.jpg)",
@@ -160,7 +217,7 @@ export default function Component() {
           filter: "blur(20px) brightness(0.3)",
           transform: "scale(1.2)", // Slightly scale up to hide blur edges
         }}
-      />
+      /> */}
 
       {/* Previous and Next arrows */}
       <button
@@ -186,87 +243,69 @@ export default function Component() {
       {/* <div className="absolute inset-0 bg-black/60" /> */}
       <div className="absolute inset-0 bg-black/40" />
 
-      <Canvas camera={{ position: [0, 0, 0], fov: 50 }}
-
-        shadows className="relative z-10">
-        {/* Camera controller for seamless movement */}
-        {/* <CameraController
-          isMovingThrough={isMovingThrough}
-          isReturning={isReturning}
-          onIntersection={handleIntersection}
-          onMovementComplete={handleMovementComplete}
-          onReturnComplete={handleReturnComplete}
-        /> */}
-        {/* <CameraControls /> */}
-
-        {/* Lighting setup to match the screenshot */}
-        <ambientLight intensity={0.2} />
-        <directionalLight
-          position={[5, 5, 5]}
-          intensity={1}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-        />
-        <pointLight position={[-5, 5, 5]} intensity={0.5} />
-        <pointLight position={[5, -5, 5]} intensity={0.3} />
-
-        {/* Dark environment */}
-        {/* <Environment preset="night" /> */}
-        {/* <Environment
-          preset="city"
-        // files='/images/frustration.jpg'
-        /> */}
-        <CustomEnvironment
-          projectsMainImages={
-            projectsMainImages
-          }
-          currentProjectIndex={
-            currentProjectIndex
-          }
+      {/* <Canvas shadows className="relative z-10">
+        <PlanesAroundCamera
+          projectsMainImages={projectsMainImages}
+          currentProjectIndex={currentProjectIndex}
+          // nextProjectIndex={(currentProjectIndex + 1) % projectsMainImages.length}
+          // nextProjectIndex={nextProjectIndex}
+          nextProjectIndex={(currentProjectIndex -1 + projectsMainImages.length) % projectsMainImages.length}
+          transition={progress.value}
+          // transition={transition}
         />
 
-        {/* Floating mirror */}
-        {/* <FloatingMirror onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning} /> */}
-        {/* <CustomFrame onThroughPlane={handleStartMovement} isMovingThrough={isMovingThrough || isReturning}
-          image={currentProject.images[0]}
-        /> */}
-        {/* <group rotation={[0, carouselRotation, 0]}>
-          {projectsMainImages.map((img, i) => {
-            const angle = (i / numFrames) * Math.PI * 2
-            const x = Math.sin(angle) * radius
-            const z = Math.cos(angle) * radius
+        <CubeCamera frames={1} resolution={256} near={0.1} far={1000}
+          position={[0, 0, 2]}
+        >
+          {(texture) => (
+            <>
+              <CarouselFrame
+                projectsMainImages={projectsMainImages}
+                // onNext={goToNextProject}
+                envMap={texture}
+                transition={progress.value}
+                // transition={transition}
+                setTransition={setTransition}
+                // setTransition={set}
+                onNext={() => {
+                  setTransition(0)
+                  set({
+                    value: 0
+                  })                   // start new transition
+                  setCurrentProjectIndex(prev => {
+                    const next = (prev + 1) % projectsMainImages.length
+                    // setNextProjectIndex((next + 1) % projectsMainImages.length)
+                    setNextProjectIndex(next)
+                    return next
+                  })
+                }}
+                onPrev={() => {
+                  setTransition(0)
+                  set({
+                    value: 0
+                  })
+                  setCurrentProjectIndex(prev => {
+                    const next = (prev - 1 + projectsMainImages.length) % projectsMainImages.length
+                    // setNextProjectIndex((next + 1) % projectsMainImages.length)
+                    setNextProjectIndex(next)
+                    return next
+                  })
+                }}
 
-            return (
-              <CustomFrame
-                onThroughPlane={handleStartMovement}
-                isMovingThrough={isMovingThrough || isReturning}
-                image={img}
-                key={i}
-                position={[x, 0, z]}
-                rotation={[0, angle + Math.PI, 0]}
+
               />
-            )
-          })}
-        </group> */}
-        <CarouselFrame projectsMainImages={projectsMainImages}
-        onNext={goToNextProject}
-        // targetRotation={targetRotation} setTargetRotation={setTargetRotation}
-        />
+            </>
+          )}
+        </CubeCamera>
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 5, 5]} intensity={2} />
+        <pointLight position={[0, 5, -5]} intensity={0.8} />
+      </Canvas> */}
 
-
-        {/* Controls for interaction - disabled during movement */}
-        {/* <OrbitControls
-            enabled={!isMovingThrough && !showContent && !isReturning}
-            enablePan={false}
-            // enableZoom={true}
-            enableZoom={false}
-            enableRotate={true}
-            minDistance={3}
-            maxDistance={10}
-          />
-        */}
+      <Canvas shadows className="relative z-10">
+        <MainScene />
       </Canvas>
+
 
       {/* Project content overlay */}
       {currentProject && <ProjectContent isVisible={showContent} isClosing={isClosing} onClose={handleClose}
