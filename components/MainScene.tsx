@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { PROJECTS } from '@/app/data';
+import React, { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import { Project, PROJECTS } from '@/app/data';
 import { extend, useFrame, useThree } from '@react-three/fiber';
 import { CustomFrame } from './CustomFrame';
-import { shaderMaterial, useTexture, CubeCamera, CameraControls } from '@react-three/drei';
+import { shaderMaterial, useTexture, CubeCamera, CameraControls, Html } from '@react-three/drei';
 import { useControls } from 'leva';
 import * as THREE from 'three'
+import { CameraController } from './CameraController';
+import { ProjectContent } from './ProjectContent';
 
 const TransitionMaterial = shaderMaterial(
     {
@@ -17,11 +19,10 @@ const TransitionMaterial = shaderMaterial(
   varying vec2 vUv;
   void main() {
     vUv = uv;
-
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
   }
   `,
-    // fragment shader (blend two textures)
+    // fragment shader (blend two textures and darken)
     `
   uniform sampler2D texture1;
   uniform sampler2D texture2;
@@ -29,10 +30,13 @@ const TransitionMaterial = shaderMaterial(
   varying vec2 vUv;
 
   void main() {
-  vec2 uv = vec2(vUv.x, 1.0 - vUv.y);
+    vec2 uv = vec2(vUv.x, 1.0 - vUv.y);
     vec4 color1 = texture2D(texture1, uv);
     vec4 color2 = texture2D(texture2, uv);
-    gl_FragColor = mix(color1, color2, transition);
+    vec4 blended = mix(color1, color2, transition);
+    // blended.rgb *= 1.0; // darken by 0%
+    blended.rgb *= 0.6; // darken by 40% !!! INFLUENCE REFLECTIONS IN FRAME
+    gl_FragColor = blended;
   }
   `
 )
@@ -40,11 +44,11 @@ const TransitionMaterial = shaderMaterial(
 extend({ TransitionMaterial })
 
 interface MainScene {
-
 }
 
-const MainScene: React.FC<MainScene> = ({ }) => {
-    const projectsMainImages = PROJECTS.map((project) => project.images[0])
+const projectsMainImages = PROJECTS.map((project) => project.images[0])
+const MainScene: React.FC<MainScene> = ({
+}) => {
 
     const textures = useTexture(projectsMainImages);
 
@@ -61,8 +65,18 @@ const MainScene: React.FC<MainScene> = ({ }) => {
         // )
     }, [textures]);
 
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [currentIndex, setCurrentIndex] = useState(
+        0
+    );
+
+
     const nextIndex = (currentIndex + 1) % projectsMainImages.length;
+    // const currentProject = useMemo(() => PROJECTS[currentIndex], [currentIndex])
+    const [currentProject, setCurrentProject] = useState(PROJECTS[0])
+
+    // useEffect(() => {
+    //     setCurrentProject(PROJECTS[currentIndex])
+    // }, [currentIndex])
 
     // progress
     // const [transition, setTransition] = useState(0)
@@ -113,6 +127,78 @@ const MainScene: React.FC<MainScene> = ({ }) => {
     const hasCommittedRef = useRef(false);
     const nextIndexRef = useRef((currentIndexRef.current + 1) % textures.length);
 
+    // zoom in details
+    const [isMovingThrough, setIsMovingThrough] = useState(false)
+    const [isReturning, setIsReturning] = useState(false)
+    const [showContent, setShowContent] = useState(false)
+    const [isClosing, setIsClosing] = useState(false)
+    const handleStartMovement = () => {
+        setIsMovingThrough(true)
+    }
+
+    const handleIntersection = () => {
+        // Camera has passed through the plane - show content
+        setShowContent(true)
+    }
+
+    const handleMovementComplete = () => {
+        setIsMovingThrough(false)
+    }
+
+    const handleClose = () => {
+        // Start closing sequence
+        setIsClosing(true)
+
+        // Hide content immediately and start return animation
+        setTimeout(() => {
+            setShowContent(false)
+            setIsReturning(true)
+        }, 100)
+    }
+
+    const handleReturnComplete = () => {
+        // Reset all states when return is complete
+        setIsReturning(false)
+        setIsClosing(false)
+    }
+
+    //   const { camera } = useThree()
+    // const startPosition = useRef(new THREE.Vector3(0, 0, 5)) // Initial position
+    const startPosition = useRef(new THREE.Vector3(0, 0, 0)) // Initial position
+    const throughPosition = useRef(new THREE.Vector3(0, 0, -3)) // Through the plane
+    const returnStartPosition = useRef(new THREE.Vector3(0, 0, -3)) // Close but visible frame position
+    const progress = useRef(0)
+    const hasIntersected = useRef(false)
+
+    useEffect(() => {
+        if (isMovingThrough) {
+            // Store current camera position and reset progress
+            progress.current = 0
+            hasIntersected.current = false
+        }
+    }, [isMovingThrough])
+
+    useEffect(() => {
+        if (isReturning) {
+            // Immediately position camera at a close but visible distance
+            camera.position.copy(returnStartPosition.current)
+            // camera.lookAt(0, 0, 0)
+            progress.current = 0
+        }
+    }, [isReturning, camera])
+
+
+    const updateCurrentIndex = (index: number) => {
+        // alert(index)
+        setCurrentIndex((prev) => {
+            const newIndex = (prev + 1) % textures.length;
+            setCurrentProject(PROJECTS[newIndex])
+            return newIndex;
+        });
+    }
+
+
+
     // TODO: carousel rotation based on transition progress
     useFrame((state, delta) => {
         if (!groupRef.current) return;
@@ -132,6 +218,7 @@ const MainScene: React.FC<MainScene> = ({ }) => {
         // When transition fully completes, mark as committed
         if (transitionRef.current >= 1 && !hasCommittedRef.current) {
             hasCommittedRef.current = true;
+            updateCurrentIndex(currentIndexRef.current);
         }
 
         // When transition resets to 0 (after showing the new texture), update currentIndex
@@ -150,10 +237,46 @@ const MainScene: React.FC<MainScene> = ({ }) => {
             meshRefBack.current.uniforms.texture1.value = textures[currentIndexRef.current];
             meshRefBack.current.uniforms.texture2.value = textures[nextIndexRef.current];
         }
+
+        // --- Zoom In ---
+        // camera.position.set(0, 0, -2);
+        if (isMovingThrough && !isReturning && progress.current < 1) {
+            progress.current += delta / 0.7; // Smooth speed
+            const easeProgress = 1 - Math.pow(1 - progress.current, 3);
+
+            // Move camera from start to through
+            camera.position.lerpVectors(startPosition.current, throughPosition.current, easeProgress);
+            // camera.lookAt(0, 0, 0);
+
+            // Get world position of the target frame
+            const frameWorldPos = new THREE.Vector3(0, 0, -2.75); // Assuming frame is at Z = -2.5 in world space
+
+            // Intersection check: when camera Z <= frame's Z in world space
+            if (!hasIntersected.current && camera.position.z <= frameWorldPos.z) {
+                hasIntersected.current = true;
+                handleIntersection();
+            }
+
+            if (progress.current >= 1) {
+                handleMovementComplete();
+            }
+        }
+
+        // // --- Return / Zoom Out ---
+        if (isReturning && progress.current < 1) {
+            progress.current += delta / 1.2
+            const easeProgress = 1 - Math.pow(1 - progress.current, 3)
+            camera.position.lerpVectors(returnStartPosition.current, startPosition.current, easeProgress)
+            // camera.lookAt(0, 0, 0)
+
+            if (progress.current >= 1) {
+                handleReturnComplete()
+            }
+        }
     });
 
 
-    // TODO: reverse order
+    // TODO: reverse order here + in images
     const handleNext = () => {
         // setTargetRotation((prev) => prev + (Math.PI) / numFrames);
         setTargetRotation((prev) => prev - (Math.PI) / numFrames);
@@ -169,8 +292,17 @@ const MainScene: React.FC<MainScene> = ({ }) => {
     };
 
 
+
+
     return (
         <>
+            {/* <CameraController
+                isMovingThrough={isMovingThrough}
+                isReturning={isReturning}
+                onIntersection={handleIntersection}
+                onMovementComplete={handleMovementComplete}
+                onReturnComplete={handleReturnComplete}
+            /> */}
             {/* The thing that should be reflected: a plane around camera */}
             {/* background behind frame */}
             <mesh position={[0, 0, -5]}
@@ -194,7 +326,9 @@ const MainScene: React.FC<MainScene> = ({ }) => {
             </mesh>
 
 
-            <CubeCamera frames={Infinity} resolution={256} near={0.1} far={1000}
+            <CubeCamera
+                frames={Infinity}
+                resolution={256} near={0.1} far={1000}
                 position={[0, 0, 2]}
             >
                 {(texture) => (
@@ -217,6 +351,9 @@ const MainScene: React.FC<MainScene> = ({ }) => {
                                         rotation={[0, rotationY, 0]}
                                         onClick={handleNext}
                                         envMap={texture}
+                                        isMovingThrough={isMovingThrough || isReturning}
+                                        onThroughPlane={handleStartMovement}
+
                                     />
                                 )
                             })}
@@ -229,8 +366,78 @@ const MainScene: React.FC<MainScene> = ({ }) => {
             <ambientLight intensity={0.5} />
             <directionalLight position={[5, 5, 5]} intensity={2} />
             <pointLight position={[0, 5, -5]} intensity={0.8} />
+            {currentProject && <Html
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    height: '100vh',
+                    width: '100vw',
+                    zIndex: 10,
+                    // background:'red'
+                }}
+            // fullscreen
+            >
+                <>
+                    <button
+                        onClick={handlePrev}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
+                        aria-label="Previous Project"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
+                        aria-label="Next Project"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <ProjectContent
+                        isVisible={showContent} isClosing={isClosing}
+                        onClose={() => {
+                            setIsClosing(true)
+                            setTimeout(() => {
+                                setShowContent(false)
+                                setIsReturning(true)
+                            }, 100)
+                        }}
+                        currentProject={currentProject}
+                    />
+                </>
+                <div className="grid grid-cols-12 px-8 w-full z-100 pt-32">
+                    <div
+                        className="col-start-9 col-end-13 text-white"
+                    >
+                        {PROJECTS.map((project, i) => (
 
-            <CameraControls />
+                            <div className="text-2xl cursor-pointer"
+                                key={project.name}
+                                style={{ opacity: currentIndex === i ? 1 : 0.6 }}
+                                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                                onMouseLeave={e => (e.currentTarget.style.opacity = currentIndex === i ? "1" : "0.6")}
+                            >{project.name}</div>
+                        ))}
+                    </div>
+                </div>
+                <div className="grid grid-cols-12 px-8 w-full absolute bottom-0 left-0 z-100 mb-16">
+                    <div
+                        className={`col-start-3 col-end-6 text-white text-4xl cursor-pointer transition-all duration-700 delay-100 ${!showContent ? 'visible' : 'hidden'}`}
+                        onClick={() => {
+                            setIsMovingThrough(true)
+                        }}
+                    >
+                        {/* {currentProject.name} */}
+                        View Details
+                    </div>
+                </div>
+
+            </Html>
+            }
         </>
     );
 }

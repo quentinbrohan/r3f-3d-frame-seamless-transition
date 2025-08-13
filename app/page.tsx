@@ -9,6 +9,7 @@ import { useControls } from "leva"
 import { useEffect, useState } from "react"
 import * as THREE from 'three'
 import { PROJECTS } from "./data"
+import { CameraController } from "@/components/CameraController"
 
 interface CustomEnvironmentProps {
   projectsMainImages: string[];
@@ -126,9 +127,9 @@ export default function Component() {
 
   const [currentProject, setCurrentProject] = useState<typeof PROJECTS[number]>(PROJECTS[0])
 
-//   useEffect(() => {
-// alert(currentProject.name)
-//   },[currentProject.name])
+  //   useEffect(() => {
+  // alert(currentProject.name)
+  //   },[currentProject.name])
   const projectsMainImages = PROJECTS.map((project) => project.images[0])
   // const currentProjectIndex = PROJECTS.findIndex((project) => project.id === currentProject.id)
 
@@ -201,7 +202,7 @@ export default function Component() {
   useEffect(() => {
     const current = PROJECTS.find((p, i) => i === currentProjectIndex)
     setCurrentProject(current)
-  },[currentProjectIndex])
+  }, [currentProjectIndex])
 
 
   return (
@@ -220,7 +221,7 @@ export default function Component() {
       /> */}
 
       {/* Previous and Next arrows */}
-      <button
+      {/* <button
         onClick={goToPreviousProject}
         className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
         aria-label="Previous Project"
@@ -237,7 +238,7 @@ export default function Component() {
         <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-      </button>
+      </button> */}
 
       {/* Dark overlay for better contrast */}
       {/* <div className="absolute inset-0 bg-black/60" /> */}
@@ -302,15 +303,31 @@ export default function Component() {
         <pointLight position={[0, 5, -5]} intensity={0.8} />
       </Canvas> */}
 
-      <Canvas shadows className="relative z-10">
-        <MainScene />
+      {/* <div
+        className={`absolute bottom-0 left-0 z-[100] text-white mb-16 ml-16 text-4xl cursor-pointer transition-all duration-700 delay-100 ${!showContent ? 'visible' : 'hidden'}`}
+        onClick={handleStartMovement}
+        key={currentProject.name}
+      >
+        {currentProject.name}
+      </div> */}
+
+      <Canvas shadows className="relative z-10"
+      >
+        <MainScene
+        />
+        <CameraController
+          isMovingThrough={isMovingThrough}
+          isReturning={isReturning}
+          onIntersection={handleIntersection}
+          onMovementComplete={handleMovementComplete}
+          onReturnComplete={handleReturnComplete}
+        />
       </Canvas>
 
-
       {/* Project content overlay */}
-      {currentProject && <ProjectContent isVisible={showContent} isClosing={isClosing} onClose={handleClose}
+      {/* {currentProject && <ProjectContent isVisible={showContent} isClosing={isClosing} onClose={handleClose}
         currentProject={currentProject}
-      />}
+      />} */}
     </div>
   )
 }

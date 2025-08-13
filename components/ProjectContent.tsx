@@ -29,7 +29,7 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
     ? currentProjectIndex + 1
     : null
   const nextProject = nextProjectIndex ? PROJECTS[nextProjectIndex]
-    : null
+    : PROJECTS[0]
   const nextProjectTitle = nextProject?.name;
   const nextProjectTitleArray = nextProjectTitle
     ? [
@@ -83,6 +83,7 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
   }
 
   if (!isVisible) return null
+
 
   const tags = [
     "techniques mixtes sur papier",
@@ -199,7 +200,9 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
                         className={`px-3 py-1 bg-white/10 rounded-full text-xs text-white/80 border border-white/20 transition-all duration-500`}
                         style={{
                           transitionDelay: `${600 + index * 40}ms`,
-                          opacity: textVisible && !isClosing ? 1 : 0,
+                          // opacity: textVisible && !isClosing ? 1 : 0,
+                          opacity: textVisible && !isClosing ?
+                          tag.value === 'Disponible' ? 1 : 0.6                          : 0,
                           transform: textVisible && !isClosing ? "translateY(0)" : "translateY(16px)",
                         }}
                       >
@@ -327,13 +330,14 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
               <Environment preset="city" />
               {/* <CustomEnvironment /> */}
 
-{/* TODO:
+              {/* TODO:
 Already in project, so need to simulates zoom in again + display blurred bg of image behind when camera reach behind painting frame
 */}
               <CustomFrame
                 onThroughPlane={handleStartNextMovement}
                 isMovingThrough={isMovingThroughNext || isReturningNext}
                 image={nextProject?.images[0]}
+                lookAtCamera
               />
             </Canvas>
           </div>
@@ -343,7 +347,7 @@ Already in project, so need to simulates zoom in again + display blurred bg of i
       {/* Next Project Content Overlay */}
       {showNextContent && (
         <ProjectContent isVisible={showNextContent} isClosing={isClosingNext} onClose={handleCloseNext}
-        currentProject={currentProject}
+          currentProject={currentProject}
         />
       )}
     </div>

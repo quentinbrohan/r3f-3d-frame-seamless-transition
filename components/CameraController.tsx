@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useMemo } from "react"
 import { useFrame, useThree } from "@react-three/fiber"
 import { Vector3 } from "three"
 
@@ -10,14 +10,15 @@ interface CameraControllerProps {
   onIntersection: () => void
   onMovementComplete: () => void
   onReturnComplete: () => void
+  lookAt?: [number, number, number]
 }
 
-export function CameraController({ 
-  isMovingThrough, 
-  isReturning, 
-  onIntersection, 
-  onMovementComplete, 
-  onReturnComplete 
+export function CameraController({
+  isMovingThrough,
+  isReturning,
+  onIntersection,
+  onMovementComplete,
+  onReturnComplete,
 }: CameraControllerProps) {
   const { camera } = useThree()
   const startPosition = useRef(new Vector3(0, 0, 5)) // Initial position
@@ -44,26 +45,31 @@ export function CameraController({
   }, [isReturning, camera])
 
   useFrame(() => {
+    // return
+    // if (lookAt) {
+    //   camera.lookAt(...lookAt) // Ensure camera always looks at the center
+    // }
+
     // Forward movement through the plane
     if (isMovingThrough && !isReturning && progress.current < 1) {
       progress.current += 0.015 // Smooth movement speed
-      
+
       // Ease out cubic for smooth animation
       const easeProgress = 1 - Math.pow(1 - progress.current, 3)
-      
+
       // Interpolate camera position from start to through
       camera.position.lerpVectors(startPosition.current, throughPosition.current, easeProgress)
       camera.lookAt(0, 0, 0)
-      
+
       // Calculate plane position in world space (accounting for scale and position)
       const planeWorldZ = 0.01 * 0.04 // plane position * group scale
-      
+
       // Check if camera has passed through the plane
       if (!hasIntersected.current && camera.position.z <= planeWorldZ) {
         hasIntersected.current = true
         onIntersection()
       }
-      
+
       // Complete forward movement
       if (progress.current >= 1) {
         onMovementComplete()
@@ -73,14 +79,14 @@ export function CameraController({
     // Return movement - smooth zoom out from close position to default
     if (isReturning && progress.current < 1) {
       progress.current += 0.025 // Smooth return speed
-      
+
       // Ease out cubic for smooth return animation
       const easeProgress = 1 - Math.pow(1 - progress.current, 3)
-      
+
       // Interpolate camera position from close position to default
       camera.position.lerpVectors(returnStartPosition.current, startPosition.current, easeProgress)
       camera.lookAt(0, 0, 0)
-      
+
       // Complete return movement
       if (progress.current >= 1) {
         onReturnComplete()

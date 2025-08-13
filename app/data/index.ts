@@ -27,8 +27,8 @@ export interface Project {
 
 export const PROJECTS: Project[] = [
   {
-    id: "frustation",
-    name: "Frustation",
+    id: "frustration",
+    name: "Frustration",
     description: "Frustrant et frustré.",
     category: "PHYSICAL_ART",
     theme: " Dark Art",
