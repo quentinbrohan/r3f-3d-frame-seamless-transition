@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Dispatch, SetStateAction, startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { Project, PROJECTS } from '@/app/data';
 import { extend, useFrame, useThree } from '@react-three/fiber';
 import { CustomFrame } from './CustomFrame';
@@ -192,7 +192,7 @@ const MainScene: React.FC<MainScene> = ({
         // alert(index)
         setCurrentIndex((prev) => {
             const newIndex = (prev + 1) % textures.length;
-            setCurrentProject(PROJECTS[newIndex])
+            setCurrentProject(PROJECTS[index])
             return newIndex;
         });
     }
@@ -276,13 +276,37 @@ const MainScene: React.FC<MainScene> = ({
     });
 
 
+
     // TODO: reverse order here + in images
     const handleNext = () => {
         // setTargetRotation((prev) => prev + (Math.PI) / numFrames);
         setTargetRotation((prev) => prev - (Math.PI) / numFrames);
-        // setTransition(0); // Reset transition to animate forward
         transitionRef.current = 0
+        // setTransition(0); // Reset transition to animate forward
     };
+
+    const invalidate = useThree((state) => state.invalidate);
+
+    const handleNextFromDom = () => {
+        // Compute next index
+        const next = (currentIndexRef.current + 1) % textures.length;
+
+        // Reset animation state
+        transitionRef.current = 0;
+        hasCommittedRef.current = false;
+        nextIndexRef.current = next;
+
+        // Update current index AFTER commit
+        currentIndexRef.current = next;
+
+        // Compute new target rotation
+        setTargetRotation(-(next * (2 * Math.PI / numFrames) + initialRotationOffset));
+        // setTargetRotation((next * (2 * Math.PI / numFrames) + initialRotationOffset));
+
+        // Force a render for immediate effect
+        invalidate();
+    };
+
 
     const handlePrev = () => {
         // setTargetRotation((prev) => prev - (Math.PI) / numFrames);
@@ -291,6 +315,39 @@ const MainScene: React.FC<MainScene> = ({
         transitionRef.current = 0
     };
 
+    const handlePrevFromDom = () => {
+        // Compute previous index
+        const prev = (currentIndexRef.current - 1 + textures.length) % textures.length;
+        nextIndexRef.current = prev;
+
+        // Reset animation state
+        transitionRef.current = 0;
+        hasCommittedRef.current = false;
+
+        // Update target rotation immediately
+        setTargetRotation(-(prev * (2 * Math.PI / numFrames) + initialRotationOffset));
+
+        // Optionally update current index now or after commit
+        currentIndexRef.current = prev;
+
+        // Force R3F to render this frame
+        invalidate();
+    };
+
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft') {
+                handlePrevFromDom();
+            } else if (e.key === 'ArrowRight') {
+                handleNextFromDom();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
 
 
@@ -349,7 +406,10 @@ const MainScene: React.FC<MainScene> = ({
                                         image={img}
                                         position={[x, y, z]}
                                         rotation={[0, rotationY, 0]}
-                                        onClick={handleNext}
+                                        // onreddit her kClick={handleNext}
+                                        onClick={() => {
+                                            setIsMovingThrough(true)
+                                        }}
                                         envMap={texture}
                                         isMovingThrough={isMovingThrough || isReturning}
                                         onThroughPlane={handleStartMovement}
@@ -380,7 +440,7 @@ const MainScene: React.FC<MainScene> = ({
             >
                 <>
                     <button
-                        onClick={handlePrev}
+                        onClick={handlePrevFromDom}
                         className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
                         aria-label="Previous Project"
                     >
@@ -389,7 +449,7 @@ const MainScene: React.FC<MainScene> = ({
                         </svg>
                     </button>
                     <button
-                        onClick={handleNext}
+                        onClick={handleNextFromDom}
                         className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
                         aria-label="Next Project"
                     >
@@ -432,7 +492,7 @@ const MainScene: React.FC<MainScene> = ({
                         }}
                     >
                         {/* {currentProject.name} */}
-                        View Details
+                        {/* View Details */}
                     </div>
                 </div>
 
