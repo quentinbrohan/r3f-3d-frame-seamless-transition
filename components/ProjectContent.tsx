@@ -82,6 +82,18 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
     setIsClosingNext(false)
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isVisible && e.key === "Escape") {
+        onClose()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isVisible, onClose])
+
   if (!isVisible) return null
 
 
@@ -202,7 +214,7 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
                           transitionDelay: `${600 + index * 40}ms`,
                           // opacity: textVisible && !isClosing ? 1 : 0,
                           opacity: textVisible && !isClosing ?
-                          tag.value === 'Disponible' ? 1 : 0.6                          : 0,
+                            tag.value === 'Disponible' ? 1 : 0.6 : 0,
                           transform: textVisible && !isClosing ? "translateY(0)" : "translateY(16px)",
                         }}
                       >
