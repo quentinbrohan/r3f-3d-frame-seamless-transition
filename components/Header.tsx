@@ -5,13 +5,13 @@ const Header = () => {
             <div className="col-start-1 col-end-3 text-white text-sm">Abnalem</div>
 
             {/* Center elements */}
-            <div className="col-start-3 col-end-6 flex items-center space-x-8 text-sm text-white/80">
+            <div className="col-start-3 col-end-6 flex items-center space-x-8 text-sm text-white/80 invisible md:visible">
                 <span>04:21 PM, CET</span>
                 <span>hello@abnalem.com</span>
             </div>
 
             {/* Navigation */}
-            <div className="col-start-9 col-end-12 flex items-center space-x-1 text-sm text-white/80">
+            <div className="col-start-9 col-end-12 flex items-center space-x-1 text-sm text-white/80 invisible md:visible">
                 <span>About,</span>
                 <span>Shop</span>
             </div>

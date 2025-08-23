@@ -132,7 +132,7 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
   ]
 
   return (
-    <div className="fixed inset-0 z-40 bg-black text-white overflow-y-auto pt-20">
+    <div className="fixed inset-0 z-40 bg-black text-white overflow-y-auto overflow-x-hidden w-screen pt-20">
       {/* Return to Index Button */}
       <button
         onClick={onClose}
@@ -153,22 +153,22 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
       {/* Main Content - Grid System */}
       <div className="pb-16">
         {/* Header - Grid with 2 columns margin */}
-        <div className="grid grid-cols-12 gap-4 px-8 pt-16">
-          <div className="col-span-12">
+        <div className="grid grid-cols-6 md:grid-cols-12 gap-4 px-8 pt-16">
+          <div className="col-span-6 md:col-span-12">
             <div
-              className={`grid grid-cols-10 gap-16 transition-all duration-700 delay-100 ${textVisible && !isClosing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              className={`grid grid-cols-5 md:grid-cols-10 gap-16 transition-all duration-700 delay-100 ${textVisible && !isClosing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
             >
               {/* Left - Title (5 columns) */}
               <div
-                className={`col-span-5 transition-all duration-700 delay-100 ${textVisible && !isClosing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                className={`col-span-5 md:col-span-5 transition-all duration-700 delay-100 ${textVisible && !isClosing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                   }`}
               >
                 <h1 className="text-6xl lg:text-7xl font-light text-white-400 leading-tight">{currentProject.name}</h1>
               </div>
 
               {/* Right - Details (5 columns) */}
-              <div className="col-span-5 space-y-8">
+              <div className="col-span-6 md:col-span-5 space-y-8">
                 {/* Description */}
                 <div
                   className={`transition-all duration-700 delay-300 ${textVisible && !isClosing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
@@ -226,7 +226,7 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
 
                 {/* Metadata Grid */}
                 <div
-                  className={`grid grid-cols-2 lg:grid-cols-4 gap-6 pt-8 border-t border-white/20 transition-all duration-700 delay-700 ${textVisible && !isClosing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                  className={`grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-6 pt-8 border-t border-white/20 transition-all duration-700 delay-700 ${textVisible && !isClosing ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                     }`}
                 >
                   {[
