@@ -214,7 +214,7 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
       <div>
         <div className="grid grid-cols-6 md:grid-cols-12 gap-4 px-8 pt-16">
           <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12">
-            <div className="grid grid-cols-5 md:grid-cols-10">
+            <div className="grid grid-cols-5 md:grid-cols-10  gap-16">
               {/* Title */}
               <div className="col-span-5 md:col-span-5"
                 data-title
