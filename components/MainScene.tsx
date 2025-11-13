@@ -177,16 +177,28 @@ const MainScene: React.FC = () => {
     };
 
     const handleClose = () => {
+        hasIntersected.current = false;
+        
         setIsClosing(true);
 
         gsap.to(camera.position, {
             z: 0,
             duration: 1,
             ease: "power3.inOut",
+            overwrite: true,
+            onUpdate: () => {
+                if (!hasIntersected.current && camera.position.z <= -2.75) {
+                    hasIntersected.current = true;
+                    setShowContent(false);
+                }
+            },
+            onComplete: () => {
+                hasIntersected.current = false
+            }
         });
 
         setTimeout(() => {
-            setShowContent(false);
+            // setShowContent(false);
             setIsClosing(false);
         }, 300);
     };
