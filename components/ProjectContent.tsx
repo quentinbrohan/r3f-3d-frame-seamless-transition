@@ -157,6 +157,12 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
   )
 
   useEffect(() => {
+    if (isVisible && containerRef.current) {
+      containerRef.current.scrollTop = 0
+    }
+  }, [isVisible])
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isVisible && e.key === 'Escape') {
         onClose();
