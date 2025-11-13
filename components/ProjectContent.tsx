@@ -7,6 +7,18 @@ import { CustomFrame } from './CustomFrame'
 import { Project, PROJECT_CATEGORY, PROJECTS } from '@/app/data'
 import { animateFadeUp, animatePageFadeIn, MOTION_CONFIG } from '@/lib/animations'
 
+const AVAILABILITIES_OPTIONS = {
+  AVAILABLE: 'AVAILABLE',
+  NOT_AVAILABLE: 'NOT_AVAILABLE',
+  SOLD: 'SOLD'
+} as const;
+
+const AVAILABILITIES_EN_FR = {
+  AVAILABLE: 'Disponible',
+  NOT_AVAILABLE: 'Non disponible',
+  SOLD: 'Vendu'
+} as const;
+
 interface ProjectContentProps {
   isVisible: boolean
   onClose: () => void
@@ -56,7 +68,6 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
     alphaEls.forEach((el) => gsap.set(el, { autoAlpha: 1 }))
     fadeEls.forEach((el) => gsap.set(el, { opacity: 1, y: 0 }))
 
-
     // TODO: gsap default config
     // UPD animation.
     tl.add(
@@ -101,7 +112,7 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
         '<=0.3')
       .add(animateFadeUp(tagEls, {
         y: MOTION_CONFIG.Y_OFFSET.MD,
-        stagger: MOTION_CONFIG.STAGGER.MD
+        stagger: MOTION_CONFIG.STAGGER.MD,
       }), '<=0.3')
       .add(animateFadeUp(metadataEls, {
         y: MOTION_CONFIG.Y_OFFSET.MD,
@@ -153,22 +164,14 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
     }
   }, [isVisible, onClose])
 
-  // if (!isVisible) return null
-
-  const AVAILABILITY_OPTIONS = {
-    'AVAILABLE': 'Disponible',
-    'NOT_AVAILABLE': 'Non disponible',
-    'SOLD': 'Vendu'
-  } as const
-
-  const AVAILABILITY_TAGS = [
+  const tags = [
     {
       label: 'Print',
-      value: AVAILABILITY_OPTIONS[currentProject.isPrintAvailable ? 'AVAILABLE' : 'NOT_AVAILABLE'],
+      value: currentProject.isPrintAvailable ? AVAILABILITIES_OPTIONS.AVAILABLE : AVAILABILITIES_OPTIONS.NOT_AVAILABLE,
     },
     {
       label: 'Original',
-      value: AVAILABILITY_OPTIONS[currentProject.isOriginalAvailable ? 'AVAILABLE' : 'NOT_AVAILABLE'],
+      value: currentProject.isOriginalAvailable ? AVAILABILITIES_OPTIONS.AVAILABLE : AVAILABILITIES_OPTIONS.NOT_AVAILABLE,
     },
   ]
 
@@ -218,16 +221,18 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
 
                 <div>
                   <div className="flex flex-wrap gap-2">
-                    {AVAILABILITY_TAGS.map((tag, index) => (
+                    {tags.map((tag, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-white/10 rounded-full text-xs text-white/80 border border-white/20"
-                        style={{
-                          opacity: tag.value === 'Disponible' ? 1 : 0.6
-                        }}
                         data-tag-item={tag.value}
                       >
-                        {tag.label}: {tag.value}
+                        <span
+                          style={{
+                            opacity: tag.value === 'AVAILABLE' ? 1 : 0.6
+                          }}>
+                          {tag.label}: {AVAILABILITIES_EN_FR[tag.value]}
+                        </span>
                       </span>
                     ))}
                   </div>

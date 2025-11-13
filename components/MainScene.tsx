@@ -183,7 +183,7 @@ const MainScene: React.FC = () => {
 
         gsap.to(camera.position, {
             z: 0,
-            duration: 1*3, // TODO: debug only
+            duration: 1,
             ease: "power3.inOut",
             overwrite: true,
             onUpdate: () => {
@@ -276,6 +276,7 @@ const MainScene: React.FC = () => {
                                     envMap={texture}
                                     onClick={handleStartMovement}
                                     isFollowingCursor={!showContent}
+                                // isFloating={!showContent}
 
                                 />
                             );

@@ -77,7 +77,8 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
 
 
     const [hovered, set] = useState(false)
-    useCursor(hovered, /*'pointer', 'auto', document.body*/)
+    // TODO: update, only hover in list page when overlay closed, atm cursor follow only in this case
+    useCursor(hovered && isFollowingCursor, /*'pointer', 'auto', document.body*/)
 
     if (texture) texture.flipY = false
 
@@ -98,6 +99,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         const elapsed = state.clock.elapsedTime
 
         // --- Floating vertical motion ---
+        // TODO: can use <Float /> from Drei directly???
         if (isFloating) {
             const baseY = Math.sin(elapsed * 0.6) * 0.15
             groupRef.current.position.y = baseY
