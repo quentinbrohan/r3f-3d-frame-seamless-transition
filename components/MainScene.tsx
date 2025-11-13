@@ -218,6 +218,27 @@ const MainScene: React.FC = () => {
         meshRefBack.current.uniforms.transition.value = 0;
     }, [textures]);
 
+    const handleSelectProject = (index: number) => {
+        const total = textures.length;
+        const current = currentIndexRef.current;
+
+        // Compute angular distance between current and target
+        const diff = index - current;
+
+        // Normalize shortest direction (-N/2 .. N/2)
+        const shortest =
+            ((diff + total / 2) % total) - total / 2;
+
+        const direction = shortest > 0 ? -1 : 1; // because your rotation direction is inverted
+
+        nextIndexRef.current = index;
+        transitionRef.current = 0;
+        // hasCommittedRef.current = false;
+
+        // Animate shader + rotation
+        animateTransition(index, direction);
+    };
+
 
     // === useFrame: only for continuous updates ===
     useFrame(() => {
@@ -322,17 +343,21 @@ const MainScene: React.FC = () => {
 
                         {/* Project Titles */}
                         <div className="grid grid-cols-12 px-8 w-full z-100 pt-32">
-                            <div className="col-start-9 col-end-13 text-white">
+                            <ul className="col-start-9 col-end-13 text-white">
                                 {PROJECTS.map((project, i) => (
-                                    <div
+                                    <li
                                         key={project.name}
-                                        className="text-2xl cursor-pointer"
-                                        style={{ opacity: currentIndex === i ? 1 : 0.6 }}
                                     >
-                                        {project.name}
-                                    </div>
+                                        <button
+                                            className={`text-2xl ${currentIndex === i ? 'opacity-100' : 'opacity-60'} transition hover:opacity-100`}
+                                            onClick={() => handleSelectProject(i)}
+                                        >
+
+                                            {project.name}
+                                        </button>
+                                    </li>
                                 ))}
-                            </div>
+                            </ul>
                         </div>
                     </>
                 </Html>
