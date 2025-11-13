@@ -5,7 +5,7 @@ import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { CustomFrame } from './CustomFrame'
 import { Project, PROJECT_CATEGORY, PROJECTS } from '@/app/data'
-import { animateFadeUp, animatePageFadeIn, MOTION_CONFIG } from '@/lib/animations'
+import { animateFadeUp, MOTION_CONFIG } from '@/lib/animations'
 
 const AVAILABILITIES_OPTIONS = {
   AVAILABLE: 'AVAILABLE',
@@ -211,7 +211,7 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
       />
 
       {/* Main Content */}
-      <div className="pb-16">
+      <div>
         <div className="grid grid-cols-6 md:grid-cols-12 gap-4 px-8 pt-16">
           <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12">
             <div className="grid grid-cols-5 md:grid-cols-10">
@@ -288,18 +288,29 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
 
         {/* Next Project */}
         <div className="relative h-screen flex items-center justify-center">
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 select-none">
-            <h2 className="text-[12rem] lg:text-[16rem] font-light text-white leading-none mb-8 text-nowrap">
-              {nextProjectTitleArray[0]}
-              <span className="text-transparent" style={{ WebkitTextStroke: '1px white' }}>
-                {nextProjectTitleArray[1]}
-              </span>
-              {nextProjectTitleArray[2]}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
+            <div data-next-project className="absolute text-white text-xl font-light z-[2] pointer-events-none"
+              style={{
+                top: 8
+              }}
+            >NEXT PROJECT</div>
+            <h2 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap" style={{
+              color: 'white',
+              WebkitTextStroke: '1px white'
+            }}>
+              {nextProjectTitle}
             </h2>
-            <div data-next-project className="text-white text-xl font-light">NEXT PROJECT</div>
+            <h2 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
+              style={{
+                color: 'transparent',
+                WebkitTextStroke: '1px white',
+                zIndex: 2
+              }}>
+              {nextProjectTitle}
+            </h2>
           </div>
 
-          <div className="w-96 h-96 z-0 relative">
+          <div className="w-full h-screen z-[1]">
             <Canvas camera={{ position: [0, 0, 3], fov: 50 }} shadows>
               <ambientLight intensity={0.2} />
               <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
@@ -310,6 +321,7 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
                 onThroughPlane={() => null}
                 image={nextProject?.images[0]}
                 lookAtCamera
+                scaleFactor={0.75}
               />
             </Canvas>
           </div>

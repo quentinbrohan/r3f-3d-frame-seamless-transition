@@ -29,6 +29,7 @@ interface CustomFrameProps {
     lookAtCamera?: boolean
     isFloating?: boolean;
     isFollowingCursor?: boolean;
+    scaleFactor?: number;
 
 }
 
@@ -41,6 +42,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         lookAtCamera,
         isFloating = false,
         isFollowingCursor = true,
+        scaleFactor = 1,
     } = props
     const groupRef = useRef()
     const planeRef = useRef()
@@ -139,7 +141,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         <group {...props} dispose={null}
             // scale={0.04}
             // scale={0.02}
-            scale={0.02}
+            scale={0.02 * scaleFactor}
             // scale={[1, 1, 1]}
             ref={groupRef}
             onPointerMove={handleMouseMove}
