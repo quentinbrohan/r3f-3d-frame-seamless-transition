@@ -45,7 +45,6 @@ const MainScene: React.FC = () => {
     const textures = useTexture(projectsMainImages);
     const { camera, invalidate } = useThree();
 
-    // === Fix texture color space ===
     useEffect(() => {
         textures.forEach((t) => {
             t.flipY = false;
@@ -54,43 +53,39 @@ const MainScene: React.FC = () => {
         });
     }, [textures]);
 
-    // === State ===
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentProject, setCurrentProject] = useState(PROJECTS[0]);
     const [showContent, setShowContent] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
 
-    // === Scene refs ===
     const meshRefFront = useRef<any>();
     const meshRefBack = useRef<any>();
     const groupRef = useRef<any>();
 
-    // === Carousel logic ===
     const numFrames = projectsMainImages.length;
     const radius = 5;
     const initialRotationOffset = Math.PI;
 
     const transitionRef = useRef(0);
-    const targetRotation = useRef(-initialRotationOffset);
+    const targetRotation = useRef(initialRotationOffset);
     const currentIndexRef = useRef(0);
     const nextIndexRef = useRef(1);
 
     camera.position.set(0, 0, 0);
 
-    // === Utility: compute rotation for a specific frame index ===
     function setTargetRotationForIndex(nextIndex: number, direction = 1) {
         const step = (2 * Math.PI) / numFrames;
         const current = targetRotation.current;
-        const desired = -(nextIndex * step + initialRotationOffset);
+
+        const desired = (nextIndex * step + initialRotationOffset); // Remove the negative
 
         let delta = desired - current;
         delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-        // enforce rotation direction
+        // Standard direction enforcement (now intuitive)
         if (direction > 0 && delta < 0) delta += 2 * Math.PI;
         if (direction < 0 && delta > 0) delta -= 2 * Math.PI;
 
-        // animate rotation smoothly with GSAP
         gsap.to(targetRotation, {
             current: current + delta,
             duration: 1,
@@ -98,32 +93,24 @@ const MainScene: React.FC = () => {
         });
     }
 
-    // === Animate texture transition ===
     const animateTransition = (next: number, direction: 1 | -1) => {
-        const prev = currentIndexRef.current;
-        nextIndexRef.current = next;
-        transitionRef.current = 0;
+        const current = currentIndexRef.current;
 
-        // Set shader start state
+        console.log({ textures, current, next });
+
+
         if (meshRefFront.current && meshRefBack.current) {
-            meshRefFront.current.uniforms.texture1.value = textures[prev];
+            meshRefFront.current.uniforms.texture1.value = textures[current];
             meshRefFront.current.uniforms.texture2.value = textures[next];
             meshRefFront.current.uniforms.transition.value = 0;
 
-            meshRefBack.current.uniforms.texture1.value = textures[prev];
+            meshRefBack.current.uniforms.texture1.value = textures[current];
             meshRefBack.current.uniforms.texture2.value = textures[next];
             meshRefBack.current.uniforms.transition.value = 0;
         }
 
-        // Animate rotation
         setTargetRotationForIndex(next, direction);
 
-        // Animate the shader's transition
-        gsap.to(transitionRef.current, { // ❌ wrong — this is not animatable
-            // Instead, animate the actual object with a getter/setter
-        });
-
-        // ✅ Correct GSAP animation
         gsap.to(transitionRef, {
             current: 1,
             duration: 0.8,
@@ -159,18 +146,19 @@ const MainScene: React.FC = () => {
 
 
 
-    // === Navigation handlers ===
     const handleNext = () => {
         const next = (currentIndexRef.current + 1) % textures.length;
-        animateTransition(next, -1);
+        const nextP = PROJECTS[next]
+        console.log({ next, nextP });
+
+        animateTransition(next, 1);
     };
 
     const handlePrev = () => {
         const prev = (currentIndexRef.current - 1 + textures.length) % textures.length;
-        animateTransition(prev, 1);
+        animateTransition(prev, -1);
     };
 
-    // === Camera zoom-in & return ===
     const hasIntersected = useRef(false);
 
     const handleStartMovement = () => {
@@ -221,26 +209,15 @@ const MainScene: React.FC = () => {
     const handleSelectProject = (index: number) => {
         const total = textures.length;
         const current = currentIndexRef.current;
-
-        // Compute angular distance between current and target
         const diff = index - current;
+        const shortest = ((diff + total / 2) % total) - total / 2;
 
-        // Normalize shortest direction (-N/2 .. N/2)
-        const shortest =
-            ((diff + total / 2) % total) - total / 2;
+        const direction = shortest > 0 ? 1 : -1; // Remove the inversion
 
-        const direction = shortest > 0 ? -1 : 1; // because your rotation direction is inverted
-
-        nextIndexRef.current = index;
-        transitionRef.current = 0;
-        // hasCommittedRef.current = false;
-
-        // Animate shader + rotation
         animateTransition(index, direction);
     };
 
 
-    // === useFrame: only for continuous updates ===
     useFrame(() => {
         if (!groupRef.current) return;
 
@@ -249,7 +226,6 @@ const MainScene: React.FC = () => {
         groupRef.current.rotation.y += (targetRotation.current - rot) * 0.08;
     });
 
-    // === Keyboard arrows ===
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "ArrowRight") handleNext();
@@ -261,7 +237,6 @@ const MainScene: React.FC = () => {
 
     return (
         <>
-            {/* BACKGROUND PLANES */}
             <mesh position={[0, 0, -5]}>
                 <planeGeometry args={[20, 20]} />
                 <transitionMaterial ref={meshRefBack} toneMapped={false} />
@@ -272,12 +247,11 @@ const MainScene: React.FC = () => {
                 <transitionMaterial ref={meshRefFront} toneMapped={false} />
             </mesh>
 
-            {/* CAROUSEL */}
             <CubeCamera frames={Infinity} resolution={256} near={0.1} far={1000} position={[0, 0, 2]}>
                 {(texture) => (
                     <group ref={groupRef}>
                         {projectsMainImages.map((img, i) => {
-                            const angle = (i / numFrames) * Math.PI * 2;
+                            const angle = -(i / numFrames) * Math.PI * 2;
                             const x = Math.sin(angle) * radius;
                             const z = Math.cos(angle) * radius;
                             const rotationY = angle + Math.PI;
@@ -301,7 +275,6 @@ const MainScene: React.FC = () => {
             <directionalLight position={[5, 5, 5]} intensity={2} />
             <pointLight position={[0, 5, -5]} intensity={0.8} />
 
-            {/* HTML OVERLAY */}
             {currentProject && (
                 <Html
                     style={{
@@ -314,7 +287,6 @@ const MainScene: React.FC = () => {
                     }}
                 >
                     <>
-                        {/* Nav Buttons */}
                         <button
                             onClick={handlePrev}
                             className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition"
@@ -333,7 +305,6 @@ const MainScene: React.FC = () => {
                             </svg>
                         </button>
 
-                        {/* Content */}
                         <ProjectContent
                             isVisible={showContent}
                             isClosing={isClosing}
@@ -341,7 +312,6 @@ const MainScene: React.FC = () => {
                             currentProject={currentProject}
                         />
 
-                        {/* Project Titles */}
                         <div className="grid grid-cols-12 px-8 w-full z-100 pt-32">
                             <ul className="col-start-9 col-end-13 text-white">
                                 {PROJECTS.map((project, i) => (
