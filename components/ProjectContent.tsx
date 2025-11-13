@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react"
 import { Canvas } from "@react-three/fiber"
 import { Environment } from "@react-three/drei"
-import { FloatingMirror } from "@/components/FloatingMirror"
 import { CustomFrame } from "./CustomFrame"
-import { CustomEnvironment } from "@/app/page"
 import { Project, PROJECT_CATEGORY, PROJECTS } from "@/app/data"
 
 interface ProjectContentProps {
