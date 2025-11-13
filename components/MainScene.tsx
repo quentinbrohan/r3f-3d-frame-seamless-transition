@@ -287,6 +287,24 @@ const MainScene: React.FC<MainScene> = ({
 
     const invalidate = useThree((state) => state.invalidate);
 
+    function setTargetRotationForIndex(nextIndex: number, direction = 1) {
+        const step = (2 * Math.PI) / numFrames;
+        const current = targetRotation;
+        const desired = -(nextIndex * step + initialRotationOffset);
+
+        // Compute angular difference
+        let delta = desired - current;
+        delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+
+        // Force rotation direction if desired
+        if (direction > 0 && delta < 0) delta += 2 * Math.PI;   // ensure clockwise
+        if (direction < 0 && delta > 0) delta -= 2 * Math.PI;   // ensure counterclockwise
+
+        setTargetRotation(current + delta);
+    }
+
+
+
     const handleNextFromDom = () => {
         // Compute next index
         const next = (currentIndexRef.current + 1) % textures.length;
@@ -300,7 +318,8 @@ const MainScene: React.FC<MainScene> = ({
         currentIndexRef.current = next;
 
         // Compute new target rotation
-        setTargetRotation(-(next * (2 * Math.PI / numFrames) + initialRotationOffset));
+        // setTargetRotation(-(next * (2 * Math.PI / numFrames) + initialRotationOffset));
+        setTargetRotationForIndex(next, -1);
         // setTargetRotation((next * (2 * Math.PI / numFrames) + initialRotationOffset));
 
         // Force a render for immediate effect
@@ -325,7 +344,7 @@ const MainScene: React.FC<MainScene> = ({
         hasCommittedRef.current = false;
 
         // Update target rotation immediately
-        setTargetRotation(-(prev * (2 * Math.PI / numFrames) + initialRotationOffset));
+        setTargetRotationForIndex(prev, 1);
 
         // Optionally update current index now or after commit
         currentIndexRef.current = prev;

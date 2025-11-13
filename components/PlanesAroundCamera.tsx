@@ -54,34 +54,9 @@ export function PlanesAroundCamera({ projectsMainImages, currentProjectIndex, ne
     //     })
     // }, [transition, set])
 
-
-    // // Load current and next textures
-    const texture1 = useTexture(projectsMainImages[currentProjectIndex])
-    const texture2 = useTexture(projectsMainImages[nextProjectIndex])
-    // texture1.mapping = THREE.EquirectangularReflectionMapping
-    // texture2.mapping = THREE.EquirectangularReflectionMapping
     const textures = useTexture(projectsMainImages)
-    // const texture1 = textures[currentProjectIndex]
-    // const texture2 = textures[nextProjectIndex]
-
-    // textures.forEach((tex) => {
-    //     tex.mapping = THREE.EquirectangularReflectionMapping
-    //     tex.flipY = false;
-    //     tex.colorSpace = THREE.SRGBColorSpace
-    //     // tex.encoding = THREE.LinearEncoding
-    //     // tex.needsUpdate = true
-    // })
-
-    // useEffect(() => {
-    //     if (ref.current) {
-    //         ref.current.uniforms.texture1.value = textures[currentProjectIndex]
-    //         ref.current.uniforms.texture2.value = textures[nextProjectIndex]
-    //     }
-    //     if (ref2.current) {
-    //         ref2.current.uniforms.texture1.value = textures[currentProjectIndex]
-    //         ref2.current.uniforms.texture2.value = textures[nextProjectIndex]
-    //     }
-    // }, [textures])
+    const texture1 = textures[currentProjectIndex]
+    const texture2 = textures[nextProjectIndex]
 
     // Update uniforms
     useFrame(() => {
