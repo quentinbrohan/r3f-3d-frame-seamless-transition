@@ -27,6 +27,8 @@ interface CustomFrameProps {
     rotation?: [number, number, number]
     envMap?: THREE.Texture
     lookAtCamera?: boolean
+    isFloating?: boolean;
+    isFollowingCursor?: boolean;
 
 }
 
@@ -37,6 +39,8 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         image,
         envMap,
         lookAtCamera,
+        isFloating = false,
+        isFollowingCursor = true,
     } = props
     const groupRef = useRef()
     const planeRef = useRef()
@@ -94,8 +98,10 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         const elapsed = state.clock.elapsedTime
 
         // --- Floating vertical motion ---
-        const baseY = Math.sin(elapsed * 0.6) * 0.15
-        groupRef.current.position.y = baseY
+        if (isFloating) {
+            const baseY = Math.sin(elapsed * 0.6) * 0.15
+            groupRef.current.position.y = baseY
+        }
 
         // --- Determine look-at target ---
         const target = lookAtCamera ? camera.position : new THREE.Vector3(0, 0, 0)
@@ -107,7 +113,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
 
         // --- Mouse & floating offsets ---
         const mouseInfluence = 0.1       // Increase for more noticeable motion
-        const horizontalScale = 1.4 *3      // Adjust for A3 width
+        const horizontalScale = 1.4 * 3      // Adjust for A3 width
 
         const eulerOffset = new THREE.Euler(
             Math.cos(elapsed * 0.5) * 0.03 + mouse.current.y * mouseInfluence,                // X rotation
@@ -119,12 +125,13 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         const offsetQuat = new THREE.Quaternion()
         offsetQuat.setFromEuler(eulerOffset)
 
+
         // --- Apply combined rotation ---
-        groupRef.current.quaternion.copy(lookAtQuat).multiply(offsetQuat)
+        groupRef.current.quaternion.copy(lookAtQuat)
+        if (isFollowingCursor) {
+            groupRef.current.quaternion.multiply(offsetQuat)
+        }
     })
-
-
-
 
     return (
         <group {...props} dispose={null}

@@ -43,7 +43,7 @@ const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
 const MainScene: React.FC = () => {
     const textures = useTexture(projectsMainImages);
-    const { camera, invalidate } = useThree();
+    const { camera } = useThree();
 
     useEffect(() => {
         textures.forEach((t) => {
@@ -56,7 +56,6 @@ const MainScene: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentProject, setCurrentProject] = useState(PROJECTS[0]);
     const [showContent, setShowContent] = useState(false);
-    const [isClosing, setIsClosing] = useState(false);
 
     const meshRefFront = useRef<any>();
     const meshRefBack = useRef<any>();
@@ -164,7 +163,8 @@ const MainScene: React.FC = () => {
     const handleStartMovement = () => {
         hasIntersected.current = false;
         gsap.to(camera.position, {
-            z: -3,
+            z: -3, // TODO: go to intersect instead + stop camera rig + stop float + dim texture
+            // z: -2.75, // TODO: go to intersect instead + stop camera rig + stop float + dim texture
             duration: 0.8,
             ease: "power3.out",
             onUpdate: () => {
@@ -178,12 +178,12 @@ const MainScene: React.FC = () => {
 
     const handleClose = () => {
         hasIntersected.current = false;
-        
-        setIsClosing(true);
+
+        // setShowContent(false)
 
         gsap.to(camera.position, {
             z: 0,
-            duration: 1,
+            duration: 1*3, // TODO: debug only
             ease: "power3.inOut",
             overwrite: true,
             onUpdate: () => {
@@ -197,10 +197,9 @@ const MainScene: React.FC = () => {
             }
         });
 
-        setTimeout(() => {
-            // setShowContent(false);
-            setIsClosing(false);
-        }, 300);
+        // setTimeout(() => {
+        //     // setShowContent(false);
+        // }, 300);
     };
 
     useEffect(() => {
@@ -276,6 +275,8 @@ const MainScene: React.FC = () => {
                                     rotation={[0, rotationY, 0]}
                                     envMap={texture}
                                     onClick={handleStartMovement}
+                                    isFollowingCursor={!showContent}
+
                                 />
                             );
                         })}
@@ -319,7 +320,6 @@ const MainScene: React.FC = () => {
 
                         <ProjectContent
                             isVisible={showContent}
-                            isClosing={isClosing}
                             onClose={handleClose}
                             currentProject={currentProject}
                         />
@@ -331,7 +331,7 @@ const MainScene: React.FC = () => {
                                         key={project.name}
                                     >
                                         <button
-                                            className={`text-2xl ${currentIndex === i ? 'opacity-100' : 'opacity-60'} transition hover:opacity-100`}
+                                            className={`text-2xl text-left ${currentIndex === i ? 'opacity-100' : 'opacity-60'} transition hover:opacity-100`}
                                             onClick={() => handleSelectProject(i)}
                                         >
 
