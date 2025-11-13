@@ -179,6 +179,13 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
     },
   ]
 
+  const metadata = [
+    { label: 'THEME', value: currentProject.theme },
+    { label: 'CATEGORY', value: PROJECT_CATEGORY[currentProject.category] },
+    { label: 'SIZE', value: `${currentProject.dimensions.width}x${currentProject.dimensions.height} cm` },
+    { label: 'YEAR', value: currentProject.endDate ? new Date(currentProject.endDate).getFullYear() : '' },
+  ]
+
   return (
     <div ref={containerRef} className="fixed inset-0 z-40 bg-black text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible">
       <button
@@ -206,8 +213,8 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
       {/* Main Content */}
       <div className="pb-16">
         <div className="grid grid-cols-6 md:grid-cols-12 gap-4 px-8 pt-16">
-          <div className="col-span-6 md:col-span-12">
-            <div className="grid grid-cols-5 md:grid-cols-10 gap-16">
+          <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12">
+            <div className="grid grid-cols-5 md:grid-cols-10">
               {/* Title */}
               <div className="col-span-5 md:col-span-5"
                 data-title
@@ -243,14 +250,9 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-6 pt-8 border-t border-white/20">
-                  {[
-                    { label: 'THEME', value: currentProject.theme },
-                    { label: 'CATEGORY', value: PROJECT_CATEGORY[currentProject.category] },
-                    { label: 'SIZE', value: `${currentProject.dimensions.width}x${currentProject.dimensions.height} cm` },
-                    { label: 'YEAR', value: currentProject.endDate ? new Date(currentProject.endDate).getFullYear() : '' },
-                  ].map((meta) => (
-                    <div key={meta.label} className="animate-metadata">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-6 pt-8 TODO:REMOVE:border-t border-white/20">
+                  {metadata.map((meta) => (
+                    <div key={meta.label}>
                       <div data-metadata-item={meta.label} className="text-xs text-white-400 mb-2 uppercase tracking-wider">{meta.label}</div>
                       <div data-metadata-item={meta.value} className="text-sm text-white">{meta.value}</div>
                     </div>
@@ -263,25 +265,29 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
 
         {/* Images */}
         <div className="grid grid-cols-12 gap-4 px-8 mt-16 mb-32">
-          <div className="col-start-2 col-end-12 animate-images">
+          <div className="col-start-1 col-end-13">
             <div className="mb-8">
               <div className="overflow-hidden">
                 <img data-image-item src={currentProject.images[0]} alt="Artwork" className="w-full h-full object-cover" />
               </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {currentProject.images.slice(1, -1).map((src) => (
-                <div key={src} className="aspect-[3/4] overflow-hidden">
-                  <img data-image-item src={src} alt="Detail view" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
+          <div className="col-start-1 col-end-13  md:col-start-2 md:col-end-12 grid grid-cols-2 gap-8">
+            {currentProject.images.slice(-2).map((src) => (
+              <div key={src} className="aspect-[3/4] overflow-hidden">
+                <img
+                  src={src}
+                  alt="Detail view"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Next Project */}
-        <div className="relative h-screen flex items-center justify-center animate-next-project">
+        <div className="relative h-screen flex items-center justify-center">
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 select-none">
             <h2 className="text-[12rem] lg:text-[16rem] font-light text-white leading-none mb-8 text-nowrap">
               {nextProjectTitleArray[0]}
