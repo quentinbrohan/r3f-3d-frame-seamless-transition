@@ -178,17 +178,17 @@ const MainScene: React.FC = () => {
 
     const handleClose = () => {
         setIsClosing(true);
+
+        gsap.to(camera.position, {
+            z: 0,
+            duration: 1,
+            ease: "power3.inOut",
+        });
+
         setTimeout(() => {
             setShowContent(false);
-            gsap.to(camera.position, {
-                z: 0,
-                duration: 1,
-                ease: "power3.inOut",
-                onComplete: () => {
-                    setIsClosing(false);
-                },
-            });
-        }, 150);
+            setIsClosing(false);
+        }, 300);
     };
 
     useEffect(() => {

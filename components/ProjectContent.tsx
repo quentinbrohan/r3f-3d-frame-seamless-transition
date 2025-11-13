@@ -15,20 +15,17 @@ interface ProjectContentProps {
 
 export function ProjectContent({ isVisible, isClosing, onClose, currentProject }: ProjectContentProps) {
   const [textVisible, setTextVisible] = useState(false)
-  const [isMovingThroughNext, setIsMovingThroughNext] = useState(false)
-  const [isReturningNext, setIsReturningNext] = useState(false)
   const [showNextContent, setShowNextContent] = useState(false)
-  const [isClosingNext, setIsClosingNext] = useState(false)
 
   const currentProjectIndex = PROJECTS.findIndex(p => p.id === currentProject.id)
   console.log({ currentProject, currentProjectIndex, PROJECTS });
 
-  const nextProjectIndex = currentProjectIndex >= 0 && currentProjectIndex < PROJECTS.length - 1
-    ? currentProjectIndex + 1
-    : null
-  const nextProject = nextProjectIndex ? PROJECTS[nextProjectIndex]
-    : PROJECTS[0]
+  const nextProjectIndex = (currentProjectIndex + 1) % PROJECTS.length;
+  const nextProject = PROJECTS[nextProjectIndex];
+
   const nextProjectTitle = nextProject?.name;
+
+  // TODO: R3F text + intersection with frame for stroke vs fill text
   const nextProjectTitleArray = nextProjectTitle
     ? [
       nextProjectTitle.slice(0, Math.ceil(nextProjectTitle.length / 3)),
@@ -40,9 +37,6 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
     ]
     : [];
 
-  useEffect(() => {
-    // setShowNextContent(Boolean(nextProject))
-  }, [nextProject])
 
   useEffect(() => {
     if (isVisible && !isClosing) {
@@ -54,31 +48,6 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
       setTextVisible(false)
     }
   }, [isVisible, isClosing])
-
-  const handleStartNextMovement = () => {
-    setIsMovingThroughNext(true)
-  }
-
-  const handleNextIntersection = () => {
-    setShowNextContent(true)
-  }
-
-  const handleNextMovementComplete = () => {
-    setIsMovingThroughNext(false)
-  }
-
-  const handleCloseNext = () => {
-    setIsClosingNext(true)
-    setTimeout(() => {
-      setShowNextContent(false)
-      setIsReturningNext(true)
-    }, 100)
-  }
-
-  const handleNextReturnComplete = () => {
-    setIsReturningNext(false)
-    setIsClosingNext(false)
-  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -133,7 +102,11 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
     <div className="fixed inset-0 z-40 bg-black text-white overflow-y-auto overflow-x-hidden w-screen pt-20">
       {/* Return to Index Button */}
       <button
-        onClick={onClose}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation(); // prevent click from bubbling to CustomFrame
+          onClose()
+        }}
         className={`fixed top-24 right-8 z-50 text-white/80 hover:text-white text-sm transition-all duration-500 flex items-center space-x-2 ${textVisible && !isClosing ? "opacity-100" : "opacity-0"
           }`}
       >
@@ -344,8 +317,8 @@ export function ProjectContent({ isVisible, isClosing, onClose, currentProject }
 Already in project, so need to simulates zoom in again + display blurred bg of image behind when camera reach behind painting frame
 */}
               <CustomFrame
-                onThroughPlane={handleStartNextMovement}
-                isMovingThrough={isMovingThroughNext || isReturningNext}
+                // TODO: must pass currentProject to parent, so it reruns project content from root,
+                onThroughPlane={() => null}
                 image={nextProject?.images[0]}
                 lookAtCamera
               />
@@ -353,13 +326,6 @@ Already in project, so need to simulates zoom in again + display blurred bg of i
           </div>
         </div>
       </div>
-
-      {/* Next Project Content Overlay */}
-      {showNextContent && (
-        <ProjectContent isVisible={showNextContent} isClosing={isClosingNext} onClose={handleCloseNext}
-          currentProject={currentProject}
-        />
-      )}
     </div>
   )
 }
