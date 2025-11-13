@@ -229,7 +229,7 @@ const MainScene: React.FC = () => {
     };
 
 
-    useFrame(() => {
+    useFrame((state) => {
         if (!groupRef.current) return;
 
         // Smoothly ease group rotation toward target

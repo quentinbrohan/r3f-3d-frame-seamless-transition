@@ -13,10 +13,10 @@ const AVAILABILITIES_OPTIONS = {
   SOLD: 'SOLD'
 } as const;
 
-const AVAILABILITIES_EN_FR = {
-  AVAILABLE: 'Disponible',
-  NOT_AVAILABLE: 'Non disponible',
-  SOLD: 'Vendu'
+const AVAILABILITIES_VALUE = {
+  AVAILABLE: 'Available',
+  NOT_AVAILABLE: 'Not available',
+  SOLD: 'Sold out'
 } as const;
 
 interface ProjectContentProps {
@@ -81,7 +81,7 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
           visibility: 'visible',
           opacity: 1,
           autoAlpha: 1,
-          duration: 0.8,
+          duration: 0.001,
           ease: 'power2.inOut',
         }
       ))
@@ -91,13 +91,17 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
         {
           visibility: 'hidden',
           opacity: 0,
+          // filter: 'blur(20px) brightness(0.5)',
+
         },
         {
           visibility: 'visible',
           opacity: 1,
           autoAlpha: 1,
-          duration: 0.8,
+          duration: 0.4,
           ease: 'power2.inOut',
+          // filter: 'blur(20px) brightness(0.3)',
+
         }
       ), '<')
     tl.add(animateFadeUp(backToIndexEl, {
@@ -231,7 +235,8 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
                           style={{
                             opacity: tag.value === 'AVAILABLE' ? 1 : 0.6
                           }}>
-                          {tag.label}: {AVAILABILITIES_EN_FR[tag.value]}
+                          {/* {tag.label.toUpperCase()}: {AVAILABILITIES_VALUE[tag.value]} */}
+                          {tag.label.toUpperCase()}: {AVAILABILITIES_VALUE[tag.value]}
                         </span>
                       </span>
                     ))}
