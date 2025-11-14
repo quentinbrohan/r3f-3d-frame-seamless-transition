@@ -119,7 +119,7 @@ export default function Component() {
     <div className="w-full h-screen bg-black relative">
       <Header />
 
-      <Canvas shadows className="relative z-10">
+      <Canvas linear shadows className="relative z-10">
         <MainScene />
         {/* <CameraController
           isMovingThrough={isMovingThrough}
