@@ -330,9 +330,10 @@ const MainScene: React.FC = () => {
                                 {PROJECTS.map((project, i) => (
                                     <li
                                         key={project.name}
+                                        className="mb-0.5 last:mb-0"
                                     >
                                         <button
-                                            className={`text-2xl text-left ${currentIndex === i ? 'opacity-100' : 'opacity-60'} transition hover:opacity-100`}
+                                            className={`text-2xl text-left ${currentIndex === i ? 'opacity-100' : 'opacity-60'} transition hover:opacity-100 leading-none`}
                                             onClick={() => handleSelectProject(i)}
                                         >
 
