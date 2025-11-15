@@ -192,24 +192,11 @@ const MainScene: React.FC = () => {
             duration: 0.8,
             ease: "cubic.inOut",
             onUpdate: () => {
-                // if (activeFrame.scale.x > 7) {
-                console.log({
-                    targetScale,
-                    activeFrameScaleX: activeFrame.scale.x
-                });
-
                 if (activeFrame.scale.x >= targetScale * 1) {
                     setShowContent(true);
                 }
             }
         });
-
-        // Move frame to center (optional, for better effect)
-        // tl.to(activeFrame.position, {
-        //     x: 0,
-        //     duration: 0.8,
-        //     ease: "cubic.inOut"
-        // }, 0); // Start at same time as scale
     };
 
     const handleNextFromOverlay = () => {
@@ -230,15 +217,6 @@ const MainScene: React.FC = () => {
             ease: "cubic.inOut"
         });
 
-        // Move current frame back to carousel
-        const currentAngle = -(viewedIndexRef.current / numFrames) * Math.PI * 2;
-        const currentX = Math.sin(currentAngle) * radius;
-        tl.to(currentFrame.position, {
-            x: currentX,
-            duration: 0.6,
-            ease: "cubic.inOut"
-        }, 0);
-
         // Rotate carousel to next project
         tl.add(() => {
             animateTransition(nextIndex, 1);
@@ -254,13 +232,6 @@ const MainScene: React.FC = () => {
             duration: 0.6,
             ease: "cubic.inOut"
         }, "-=0.4");
-
-        // Move next frame to center
-        tl.to(nextFrame.position, {
-            x: 0,
-            duration: 0.6,
-            ease: "cubic.inOut"
-        }, "-=0.6");
 
         // Update state
         tl.add(() => {
@@ -292,16 +263,6 @@ const MainScene: React.FC = () => {
             duration: 0.8,
             ease: "cubic.inOut"
         });
-
-        // Move frame back to carousel position
-        const angle = -(viewedIndexRef.current / numFrames) * Math.PI * 2;
-        const x = Math.sin(angle) * radius;
-
-        tl.to(activeFrame.position, {
-            x: x,
-            duration: 0.8,
-            ease: "cubic.inOut"
-        }, 0);
     };
 
     useEffect(() => {

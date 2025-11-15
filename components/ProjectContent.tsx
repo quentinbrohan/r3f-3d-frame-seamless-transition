@@ -297,8 +297,8 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         </div>
 
         {/* Next Project */}
-        {Boolean(nextProject) && (<div className="relative h-screen flex items-center justify-center bg-black cursor-pointer pointer-events-none cursor-not-allowed"
-          // onClick={onNext}
+        {Boolean(nextProject) && (<div className="relative h-screen flex items-center justify-center bg-black cursor-pointer"
+          onClick={onNext}
         >
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
             <div data-next-project className="absolute text-white text-xl font-light z-[2] pointer-events-none"

@@ -172,11 +172,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
 
     return (
         <group {...props} dispose={null}
-            // scale={0.04}
-            // scale={0.02}
             scale={DEFAULT_FRAME_SCALE * scaleFactor}
-            // scale={[1, 1, 1]}
-            // ref={groupRef}
             ref={mergeRefs(groupRef, ref)}
             onPointerMove={handleMouseMove}
 
