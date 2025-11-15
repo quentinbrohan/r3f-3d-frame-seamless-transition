@@ -4,7 +4,7 @@ import { shaderMaterial, useTexture, CubeCamera, Html } from "@react-three/drei"
 import * as THREE from "three";
 import gsap from "gsap";
 import { Project, PROJECTS } from "@/app/data";
-import { CustomFrame } from "./CustomFrame";
+import { CustomFrame, FRAME_PLANE_WIDTH, DEFAULT_FRAME_SCALE } from "./CustomFrame";
 import { ProjectContent } from "./ProjectContent";
 
 // === Shader material for texture blending ===
@@ -43,7 +43,9 @@ const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
 const MainScene: React.FC = () => {
     const textures = useTexture(projectsMainImages);
-    const { camera } = useThree();
+    const { camera, size: {
+        width: viewportWidth
+    } } = useThree();
 
     useEffect(() => {
         textures.forEach((t) => {
@@ -52,6 +54,14 @@ const MainScene: React.FC = () => {
             t.needsUpdate = true;
         });
     }, [textures]);
+
+    const frameRefs = useRef<Array<THREE.Group | null>>([]);
+    const viewedIndexRef = useRef(0); // Track which project is being viewed
+
+    // Initialize refs array
+    useEffect(() => {
+        frameRefs.current = frameRefs.current.slice(0, PROJECTS.length);
+    }, []);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentProject, setCurrentProject] = useState(PROJECTS[0]);
@@ -161,45 +171,137 @@ const MainScene: React.FC = () => {
     const hasIntersected = useRef(false);
 
     const handleStartMovement = () => {
-        hasIntersected.current = false;
-        gsap.to(camera.position, {
-            z: -3, // TODO: go to intersect instead + stop camera rig + stop float + dim texture
-            // z: -2.75, // TODO: go to intersect instead + stop camera rig + stop float + dim texture
+        const activeFrame = frameRefs.current[currentIndexRef.current];
+        if (!activeFrame) return;
+
+        viewedIndexRef.current = currentIndexRef.current;
+
+        const tl = gsap.timeline();
+
+        // TODO: need group width and not plane? Scale is on group but here we animate only for the plane within to be 100% viewport width
+        const currentWidth = FRAME_PLANE_WIDTH * DEFAULT_FRAME_SCALE;
+
+        const targetScale = ((viewportWidth / FRAME_PLANE_WIDTH) * DEFAULT_FRAME_SCALE) / 2;
+
+
+        // Scale up the frame
+        tl.to(activeFrame.scale, {
+            x: targetScale,
+            y: targetScale,
+            z: targetScale,
             duration: 0.8,
-            ease: "power3.out",
+            ease: "cubic.inOut",
             onUpdate: () => {
-                if (!hasIntersected.current && camera.position.z <= -2.75) {
-                    hasIntersected.current = true;
+                // if (activeFrame.scale.x > 7) {
+                console.log({
+                    targetScale,
+                    activeFrameScaleX: activeFrame.scale.x
+                });
+
+                if (activeFrame.scale.x >= targetScale * 1) {
                     setShowContent(true);
                 }
-            },
-        });
-    };
-
-    const handleClose = () => {
-        hasIntersected.current = false;
-
-        // setShowContent(false)
-
-        gsap.to(camera.position, {
-            z: 0,
-            duration: 1,
-            ease: "power3.inOut",
-            overwrite: true,
-            onUpdate: () => {
-                if (!hasIntersected.current && camera.position.z <= -2.75) {
-                    hasIntersected.current = true;
-                    setShowContent(false);
-                }
-            },
-            onComplete: () => {
-                hasIntersected.current = false
             }
         });
 
-        // setTimeout(() => {
-        //     // setShowContent(false);
-        // }, 300);
+        // Move frame to center (optional, for better effect)
+        // tl.to(activeFrame.position, {
+        //     x: 0,
+        //     duration: 0.8,
+        //     ease: "cubic.inOut"
+        // }, 0); // Start at same time as scale
+    };
+
+    const handleNextFromOverlay = () => {
+        const currentFrame = frameRefs.current[viewedIndexRef.current];
+        const nextIndex = (viewedIndexRef.current + 1) % PROJECTS.length;
+        const nextFrame = frameRefs.current[nextIndex];
+
+        if (!currentFrame || !nextFrame) return;
+
+        const tl = gsap.timeline();
+
+        // Scale down current frame
+        tl.to(currentFrame.scale, {
+            x: DEFAULT_FRAME_SCALE,
+            y: DEFAULT_FRAME_SCALE,
+            z: DEFAULT_FRAME_SCALE,
+            duration: 0.6,
+            ease: "cubic.inOut"
+        });
+
+        // Move current frame back to carousel
+        const currentAngle = -(viewedIndexRef.current / numFrames) * Math.PI * 2;
+        const currentX = Math.sin(currentAngle) * radius;
+        tl.to(currentFrame.position, {
+            x: currentX,
+            duration: 0.6,
+            ease: "cubic.inOut"
+        }, 0);
+
+        // Rotate carousel to next project
+        tl.add(() => {
+            animateTransition(nextIndex, 1);
+        }, 0.2);
+
+        // Scale up next frame (overlap for seamless feel)
+        const targetScale = ((viewportWidth / FRAME_PLANE_WIDTH) * DEFAULT_FRAME_SCALE) / 2;
+
+        tl.to(nextFrame.scale, {
+            x: targetScale,
+            y: targetScale,
+            z: targetScale,
+            duration: 0.6,
+            ease: "cubic.inOut"
+        }, "-=0.4");
+
+        // Move next frame to center
+        tl.to(nextFrame.position, {
+            x: 0,
+            duration: 0.6,
+            ease: "cubic.inOut"
+        }, "-=0.6");
+
+        // Update state
+        tl.add(() => {
+            viewedIndexRef.current = nextIndex;
+            setCurrentProject(PROJECTS[nextIndex]);
+        }, 0.5);
+    };
+
+    const handleClose = () => {
+        const activeFrame = frameRefs.current[viewedIndexRef.current];
+        if (!activeFrame) return;
+
+        // Sync carousel if user navigated while in overlay
+        if (viewedIndexRef.current !== currentIndexRef.current) {
+            animateTransition(viewedIndexRef.current,
+                viewedIndexRef.current > currentIndexRef.current ? 1 : -1);
+            currentIndexRef.current = viewedIndexRef.current;
+        }
+
+        setShowContent(false);
+
+        const tl = gsap.timeline();
+
+        // Scale down the frame
+        tl.to(activeFrame.scale, {
+            x: DEFAULT_FRAME_SCALE,
+            y: DEFAULT_FRAME_SCALE,
+            z: DEFAULT_FRAME_SCALE,
+            duration: 0.8,
+            ease: "cubic.inOut"
+        });
+
+        // Move frame back to carousel position
+        const angle = -(viewedIndexRef.current / numFrames) * Math.PI * 2;
+        const x = Math.sin(angle) * radius;
+
+        tl.to(activeFrame.position, {
+            x: x,
+            duration: 0.8,
+            ease: "cubic.inOut"
+        }, 0);
     };
 
     useEffect(() => {
@@ -241,6 +343,7 @@ const MainScene: React.FC = () => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "ArrowRight") handleNext();
             if (e.key === "ArrowLeft") handlePrev();
+            if (e.key === 'Enter') handleStartMovement()
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
@@ -276,8 +379,9 @@ const MainScene: React.FC = () => {
                                     envMap={texture}
                                     onClick={handleStartMovement}
                                     isFollowingCursor={!showContent}
-                                // isFloating={!showContent}
-
+                                    ref={(el) => (frameRefs.current[i] = el)}
+                                    // isFollowingCursor
+                                    isFloating={!showContent}
                                 />
                             );
                         })}
@@ -323,6 +427,7 @@ const MainScene: React.FC = () => {
                             isVisible={showContent}
                             onClose={handleClose}
                             currentProject={currentProject}
+                            onNext={handleNextFromOverlay}
                         />
 
                         <div className="grid grid-cols-12 px-8 w-full z-100 pt-32">

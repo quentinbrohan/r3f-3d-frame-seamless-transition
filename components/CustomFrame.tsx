@@ -8,6 +8,12 @@ import { JSX, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTF } from 'three-stdlib'
 import { useCursor } from '@react-three/drei'
+import { mergeRefs } from '@/lib/utils'
+
+export const DEFAULT_FRAME_SCALE = 0.02;
+// from planeRef geometry computeBoundingBox
+export const FRAME_PLANE_WIDTH = 59.384
+export const FRAME_PLANE_HEIGHT = 87.672
 
 type GLTFResult = GLTF & {
     nodes: {
@@ -43,6 +49,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         isFloating = false,
         isFollowingCursor = true,
         scaleFactor = 1,
+        ref,
     } = props
     const groupRef = useRef()
     const planeRef = useRef()
@@ -100,50 +107,77 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
 
         const elapsed = state.clock.elapsedTime
 
-        // --- Floating vertical motion ---
-        // TODO: can use <Float /> from Drei directly???
-        if (isFloating) {
-            const baseY = Math.sin(elapsed * 0.6) * 0.15
-            groupRef.current.position.y = baseY
-        }
+        // --- Floating vertical motion with smooth transition ---
+        const targetY = isFloating ? Math.sin(elapsed * 0.6) * 0.15 : 0
+
+        // Smoothly interpolate to target Y position
+        groupRef.current.position.y += (targetY - groupRef.current.position.y) * 0.1
 
         // --- Determine look-at target ---
         const target = lookAtCamera ? camera.position : new THREE.Vector3(0, 0, 0)
 
-        // Compute look-at quaternion
-        const lookAtQuat = new THREE.Quaternion()
-        groupRef.current.lookAt(target)
-        lookAtQuat.copy(groupRef.current.quaternion)
+        // Compute target look-at quaternion
+        const tempObject = new THREE.Object3D()
+        tempObject.position.copy(groupRef.current.position)
+        tempObject.lookAt(target)
+        const lookAtQuat = tempObject.quaternion.clone()
 
         // --- Mouse & floating offsets ---
-        const mouseInfluence = 0.1       // Increase for more noticeable motion
-        const horizontalScale = 1.4 * 3      // Adjust for A3 width
+        const mouseInfluence = 0.1
+        const horizontalScale = 1.4 * 3
 
         const eulerOffset = new THREE.Euler(
-            Math.cos(elapsed * 0.5) * 0.03 + mouse.current.y * mouseInfluence,                // X rotation
-            Math.sin(elapsed * 0.4) * 0.08 + mouse.current.x * mouseInfluence * horizontalScale, // Y rotation
-            Math.sin(elapsed * 0.3) * 0.02,                                                  // Z rotation
+            Math.cos(elapsed * 0.5) * 0.03 + -mouse.current.y * mouseInfluence,
+            Math.sin(elapsed * 0.4) * 0.08 + mouse.current.x * mouseInfluence * horizontalScale,
+            Math.sin(elapsed * 0.3) * 0.02,
             'XYZ'
         )
 
         const offsetQuat = new THREE.Quaternion()
         offsetQuat.setFromEuler(eulerOffset)
 
-
-        // --- Apply combined rotation ---
-        groupRef.current.quaternion.copy(lookAtQuat)
+        // Apply offset if following cursor
         if (isFollowingCursor) {
-            groupRef.current.quaternion.multiply(offsetQuat)
+            lookAtQuat.multiply(offsetQuat)
         }
+
+        // --- SMOOTH TRANSITION: Lerp quaternion instead of direct copy ---
+        groupRef.current.quaternion.slerp(lookAtQuat, 0.125) // 0.125 = lerp speed (adjust for smoothness)
     })
+
+    // debug only to get frame width
+    useEffect(() => {
+        if (!planeRef.current) return;
+
+        const mesh = planeRef.current;
+
+        // compute bounding box *of the geometry*
+        const geo = mesh.geometry;
+        geo.computeBoundingBox();
+
+        const { boundingBox } = geo;
+        const width = boundingBox.max.x - boundingBox.min.x;
+        const height = boundingBox.max.y - boundingBox.min.y;
+
+        console.log("width:", width, "height:", height);
+
+        // size including scale/transform
+        const box = new THREE.Box3().setFromObject(planeRef.current);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        console.log("scaled width:", size.x);
+        console.log("scaled height:", size.y);
+    }, []);
 
     return (
         <group {...props} dispose={null}
             // scale={0.04}
             // scale={0.02}
-            scale={0.02 * scaleFactor}
+            scale={DEFAULT_FRAME_SCALE * scaleFactor}
             // scale={[1, 1, 1]}
-            ref={groupRef}
+            // ref={groupRef}
+            ref={mergeRefs(groupRef, ref)}
             onPointerMove={handleMouseMove}
 
         >
@@ -182,7 +216,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
                 material={nodes.Plane002.material}
                 onDoubleClick={handleDoubleClick}
                 onPointerOver={() => set(true)} onPointerOut={() => set(false)}
-
+            // TODO: get width of this
             >
                 <meshStandardMaterial
                     map={texture}

@@ -1,6 +1,28 @@
 import { clsx, type ClassValue } from "clsx"
+import { Ref } from "react";
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+export function mergeRefs<T>(...refs: (Ref<T> | undefined)[]): Ref<T> {
+  return (value) => {
+    const cleanups = refs.reduce<VoidFunction[]>((accumulator, ref) => {
+      if (typeof ref === "function") {
+        const cleanup = ref(value);
+        if (typeof cleanup === "function") {
+          accumulator.push(cleanup);
+        }
+      } else if (ref) {
+        ref.current = value;
+      }
+
+      return accumulator;
+    }, []);
+
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
+  };
 }

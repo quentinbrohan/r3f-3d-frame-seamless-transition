@@ -23,9 +23,10 @@ interface ProjectContentProps {
   isVisible: boolean
   onClose: () => void
   currentProject: Project
+  onNext: () => void;
 }
 
-export function ProjectContent({ isVisible, onClose, currentProject }: ProjectContentProps) {
+export function ProjectContent({ isVisible, onClose, currentProject, onNext }: ProjectContentProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
 
@@ -76,13 +77,16 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
         {
           visibility: 'hidden',
           opacity: 0,
+          backdropFilter: 'blur(0px)'
         },
         {
           visibility: 'visible',
           opacity: 1,
           autoAlpha: 1,
-          duration: 0.001,
+          duration: 0.4,
           ease: 'power2.inOut',
+          backdropFilter: 'blur(10px)'
+
         }
       ))
     tl.add(
@@ -96,7 +100,7 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
         },
         {
           visibility: 'visible',
-          opacity: 1,
+          opacity: 0,
           autoAlpha: 1,
           duration: 0.4,
           ease: 'power2.inOut',
@@ -106,30 +110,30 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
       ), '<')
     tl.add(animateFadeUp(backToIndexEl, {
       y: MOTION_CONFIG.Y_OFFSET.LG,
-    }), '<=0.3')
+    }), '<=0.15')
     tl.add(animateFadeUp(titleEl, {
       y: MOTION_CONFIG.Y_OFFSET.LG,
-    }), '<=0.3')
+    }), '<=0.15')
       .add(animateFadeUp(descriptionEl, {
         y: MOTION_CONFIG.Y_OFFSET.LG,
       }),
-        '<=0.3')
+        '<=0.15')
       .add(animateFadeUp(tagEls, {
         y: MOTION_CONFIG.Y_OFFSET.MD,
         stagger: MOTION_CONFIG.STAGGER.MD,
-      }), '<=0.3')
+      }), '<=0.15')
       .add(animateFadeUp(metadataEls, {
         y: MOTION_CONFIG.Y_OFFSET.MD,
         stagger: MOTION_CONFIG.STAGGER.MD
-      }), '<=0.3')
+      }), '<=0.15')
       .add(animateFadeUp(imageEls, {
         y: MOTION_CONFIG.Y_OFFSET.LG,
         stagger: MOTION_CONFIG.STAGGER.LG
-      }), '<=0.3')
+      }), '<=0.15')
     if (nextProjectEl) {
       tl.add(animateFadeUp(nextProjectEl, {
         y: MOTION_CONFIG.Y_OFFSET.MD,
-      }), '<=0.3')
+      }), '<=0.15')
     }
 
     timelineRef.current = tl;
@@ -193,7 +197,7 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
   ]
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-40 bg-black text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible">
+    <div ref={containerRef} className="fixed inset-0 z-40 bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible">
       <button
         onClick={(e) => {
           e.preventDefault()
@@ -293,11 +297,13 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
         </div>
 
         {/* Next Project */}
-        <div className="relative h-screen flex items-center justify-center">
+        {Boolean(nextProject) && (<div className="relative h-screen flex items-center justify-center bg-black cursor-pointer"
+          onClick={onNext}
+        >
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
             <div data-next-project className="absolute text-white text-xl font-light z-[2] pointer-events-none"
               style={{
-                top: 8
+                top: 16
               }}
             >NEXT PROJECT</div>
             <h2 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap" style={{
@@ -324,14 +330,13 @@ export function ProjectContent({ isVisible, onClose, currentProject }: ProjectCo
               <pointLight position={[5, -5, 5]} intensity={0.3} />
               <Environment preset="city" />
               <CustomFrame
-                onThroughPlane={() => null}
-                image={nextProject?.images[0]}
+                image={nextProject.images[0]}
                 lookAtCamera
                 scaleFactor={0.75}
               />
             </Canvas>
           </div>
-        </div>
+        </div>)}
       </div>
     </div>
   )
