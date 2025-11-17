@@ -85,21 +85,21 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
             animateFadeUpOut(nextProjectNameColorEl, {
                 y: MOTION_CONFIG.Y_OFFSET.LG
             }),
-            '<+=0.15'
+            `<+=${MOTION_CONFIG.STAGGER_DELAY.MD}`
         )
         tl.add(
             animateFadeUpOut(nextProjectNameStrokeEl, {
                 y: MOTION_CONFIG.Y_OFFSET.LG
             }),
-            '<+=0.15'
+            `<+=${MOTION_CONFIG.STAGGER_DELAY.MD}`
         )
 
         tl.to(frameRef.current.scale, {
             x: targetScale,
             y: targetScale,
             z: targetScale,
-            duration: 0.8,
-            ease: "cubic.inOut"
+            duration: MOTION_CONFIG.DURATION.FRAME_SCALE,
+            ease: MOTION_CONFIG.EASING.FRAME_SCALE
         }, 0.2)
 
         tl.add(() => {
@@ -143,7 +143,6 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         alphaEls.forEach((el) => gsap.set(el, { autoAlpha: 1 }))
         fadeEls.forEach((el) => gsap.set(el, { opacity: 1, y: 0 }))
 
-        // TODO: gsap default config
         tl.add(
             gsap.fromTo(
                 containerRef.current,
@@ -156,8 +155,8 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                     visibility: 'visible',
                     opacity: 1,
                     autoAlpha: 1,
-                    duration: 0.4,
-                    ease: 'power2.inOut',
+                    duration: MOTION_CONFIG.DURATION.OVERLAY,
+                    ease: MOTION_CONFIG.EASING.OVERLAY,
                     backdropFilter: 'blur(10px)'
 
                 }
@@ -175,44 +174,45 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                     visibility: 'visible',
                     opacity: 0,
                     autoAlpha: 1,
-                    duration: 0.4,
-                    ease: 'power2.inOut',
+                    duration: MOTION_CONFIG.DURATION.OVERLAY,
+                    ease: MOTION_CONFIG.EASING.OVERLAY,
                     // filter: 'blur(20px) brightness(0.3)',
 
                 }
             ), '<')
+        const staggerDelay = MOTION_CONFIG.STAGGER_DELAY.MD;
         tl.add(animateFadeUp(backToIndexEl, {
             y: MOTION_CONFIG.Y_OFFSET.LG,
-        }), '<=0.15')
+        }), `<=${staggerDelay}`)
         tl.add(animateFadeUp(titleEl, {
             y: MOTION_CONFIG.Y_OFFSET.LG,
-        }), '<=0.15')
+        }), `<=${staggerDelay}`)
             .add(animateFadeUp(descriptionEl, {
                 y: MOTION_CONFIG.Y_OFFSET.LG,
             }),
-                '<=0.15')
+                `<=${staggerDelay}`)
             .add(animateFadeUp(tagEls, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
                 stagger: MOTION_CONFIG.STAGGER.MD,
-            }), '<=0.15')
+            }), `<=${staggerDelay}`)
             .add(animateFadeUp(metadataEls, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
                 stagger: MOTION_CONFIG.STAGGER.MD
-            }), '<=0.15')
+            }), `<=${staggerDelay}`)
             .add(animateFadeUp(imageEls, {
                 y: MOTION_CONFIG.Y_OFFSET.LG,
                 stagger: MOTION_CONFIG.STAGGER.LG
-            }), '<=0.15')
+            }), `<=${staggerDelay}`)
         if (nextProjectTitleEl) {
             tl.add(animateFadeUp(nextProjectTitleEl, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
-            }), '<=0.15')
+            }), `<=${staggerDelay}`)
                 .add(animateFadeUp(nextProjectNameColorEl, {
                     y: MOTION_CONFIG.Y_OFFSET.LG,
-                }), '<=0.15')
+                }), `<=${staggerDelay}`)
                 .add(animateFadeUp(nextProjectNameStrokeEl, {
                     y: MOTION_CONFIG.Y_OFFSET.LG,
-                }), '<=0.15')
+                }), `<=${staggerDelay}`)
         }
 
         timelineRef.current = tl;

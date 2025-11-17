@@ -10,14 +10,25 @@ export const MOTION_CONFIG = {
     LG: 0.2,
     MD: 0.1,
   },
+  STAGGER_DELAY: {
+    SM: 0.1,
+    MD: 0.15,
+    LG: 0.6,
+  },
   DURATION: {
     TRANSITION: 0.7,
+    CAROUSEL: 0.8,
+    FRAME_SCALE: 0.8,
+    OVERLAY: 0.4,
     CTA: 0.3,
     DEFAULT: 0.5,
-    SCRAMBLE: 1,
   },
-  SCRAMBLE: {
-    CHARSET: "DAOTSHCN5-",
+  EASING: {
+    DEFAULT: "power2.inOut",
+    CAROUSEL: "power2.inOut",
+    FRAME_SCALE: "cubic.inOut",
+    OVERLAY: "power2.inOut",
+    OUT: "power2.out",
   },
 };
 
@@ -25,7 +36,7 @@ export const animatePageFadeIn = () => {
   return gsap.from(["canvas"], {
     opacity: 0,
     duration: MOTION_CONFIG.DURATION.TRANSITION,
-    ease: "power2.inOut",
+    ease: MOTION_CONFIG.EASING.DEFAULT,
   });
 };
 
@@ -38,7 +49,7 @@ export const animateNavToPageFadeOut = (
   tl.to(["main", "canvas"], {
     opacity: 0,
     duration: MOTION_CONFIG.DURATION.TRANSITION,
-    ease: "power2.inOut",
+    ease: MOTION_CONFIG.EASING.DEFAULT,
   }).call(() => router.push(href));
 };
 

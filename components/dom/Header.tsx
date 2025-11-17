@@ -26,27 +26,27 @@ const Header = () => {
         tl.add(
             animateFadeUp(logoEl, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
-            }), '<+=1'
+            }), `<+=${MOTION_CONFIG.STAGGER_DELAY.LG}`
         )
         tl.add(
             animateFadeUp(centerInfoEls, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
                 stagger: MOTION_CONFIG.STAGGER.MD,
             }),
-            '<+=0.1'
+            `<+=${MOTION_CONFIG.STAGGER_DELAY.SM}`
         )
         tl.add(
             animateFadeUp(navEls, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
                 stagger: MOTION_CONFIG.STAGGER.MD,
             }),
-            '<+=0.1'
+            `<+=${MOTION_CONFIG.STAGGER_DELAY.SM}`
         )
         tl.add(
             animateFadeUp(contactEl, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
             }),
-            '<+=0.1'
+            `<+=${MOTION_CONFIG.STAGGER_DELAY.SM}`
         )
 
         tlRef.current = tl;

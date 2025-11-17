@@ -104,8 +104,8 @@ const MainScene: React.FC = () => {
 
             gsap.to(targetRotation, {
                 current: current + delta,
-                duration: 0.8,
-                ease: "power2.inOut",
+                duration: MOTION_CONFIG.DURATION.CAROUSEL,
+                ease: MOTION_CONFIG.EASING.CAROUSEL,
             });
         },
         [step]
@@ -130,8 +130,8 @@ const MainScene: React.FC = () => {
 
             gsap.to(transitionRef, {
                 current: 1,
-                duration: 0.8,
-                ease: "power2.inOut",
+                duration: MOTION_CONFIG.DURATION.CAROUSEL,
+                ease: MOTION_CONFIG.EASING.CAROUSEL,
                 onUpdate: () => {
                     setTransitionValue(transitionRef.current);
                 },
@@ -178,8 +178,8 @@ const MainScene: React.FC = () => {
                 x: targetScale,
                 y: targetScale,
                 z: targetScale,
-                duration: 0.8,
-                ease: "cubic.inOut",
+                duration: MOTION_CONFIG.DURATION.FRAME_SCALE,
+                ease: MOTION_CONFIG.EASING.FRAME_SCALE,
                 onUpdate: () => {
                     if (activeFrame.scale.x > targetScale * 0.7) {
                         setShowContent(true);
@@ -222,8 +222,8 @@ const MainScene: React.FC = () => {
                         x: DEFAULT_FRAME_SCALE,
                         y: DEFAULT_FRAME_SCALE,
                         z: DEFAULT_FRAME_SCALE,
-                        duration: 0.8,
-                        ease: "cubic.inOut",
+                        duration: MOTION_CONFIG.DURATION.FRAME_SCALE,
+                        ease: MOTION_CONFIG.EASING.FRAME_SCALE,
                     },
                     0
                 );
@@ -480,7 +480,7 @@ const ProjectList = ({
             animateFadeUp(itemEls, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
                 stagger: MOTION_CONFIG.STAGGER.MD
-            }), '<+=0.6'
+            }), `<+=${MOTION_CONFIG.STAGGER_DELAY.LG}`
         )
 
         tlRef.current = tl;
