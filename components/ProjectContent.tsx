@@ -263,6 +263,9 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
             ref={containerRef}
             className="fixed inset-0 z-40 bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible"
             data-overlay-container
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="project-title"
         >
             <button
                 onClick={(e) => {
@@ -272,15 +275,16 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                 }}
                 className="fixed top-24 right-8 z-50 text-white/80 hover:text-white text-sm flex items-center space-x-2"
                 data-close-button
+                aria-label="Close project and return to index"
             >
-                ← Return to Index
+                <span aria-hidden="true">←</span> Return to Index
             </button>
 
             <OverlayBackground image={currentProject.images[0]} />
 
             <div>
                 <ProjectHero project={currentProject} tags={tags} metadata={metadata} />
-                <ProjectImages images={currentProject.images} />
+                <ProjectImages images={currentProject.images} projectName={currentProject.name} />
                 {Boolean(nextProject) && (
                     <NextProjectSection
                         project={nextProject}
@@ -306,7 +310,7 @@ const ProjectHero = ({ project, tags, metadata }: ProjectHeroProps) => (
         <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12">
             <div className="grid grid-cols-5 md:grid-cols-10 gap-16">
                 <div className="col-span-5 md:col-span-5" data-title>
-                    <h1 className="text-6xl lg:text-7xl font-light text-white-400 leading-tight">
+                    <h1 id="project-title" className="text-6xl lg:text-7xl font-light text-white-400 leading-tight">
                         {project.name}
                     </h1>
                 </div>
@@ -350,24 +354,33 @@ const ProjectHero = ({ project, tags, metadata }: ProjectHeroProps) => (
     </div>
 )
 
-const ProjectImages = ({ images }: { images: string[] }) => (
-    <div className="grid grid-cols-12 gap-4 px-8 mt-16 mb-32">
+const ProjectImages = ({ images, projectName }: { images: string[]; projectName: string }) => (
+    <section className="grid grid-cols-12 gap-4 px-8 mt-16 mb-32" aria-label={`${projectName} images`}>
         <div className="col-start-1 col-end-13">
             <div className="mb-8">
                 <div className="overflow-hidden">
-                    <img data-image-item src={images[0]} alt="Artwork" className="w-full h-full object-cover" />
+                    <img
+                        data-image-item
+                        src={images[0]}
+                        alt={`${projectName} - Main artwork view`}
+                        className="w-full h-full object-cover"
+                    />
                 </div>
             </div>
         </div>
 
         <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12 grid grid-cols-2 gap-8">
-            {images.slice(-2).map((src) => (
+            {images.slice(-2).map((src, index) => (
                 <div key={src} className="aspect-[3/4] overflow-hidden">
-                    <img src={src} alt="Detail view" className="w-full h-full object-cover" />
+                    <img
+                        src={src}
+                        alt={`${projectName} - Detail view ${index + 1}`}
+                        className="w-full h-full object-cover"
+                    />
                 </div>
             ))}
         </div>
-    </div>
+    </section>
 )
 
 const OverlayBackground = ({ image }: { image: string }) => (
@@ -397,7 +410,23 @@ const NextProjectSection = ({
     frameRef,
     isTransitioning,
 }: NextProjectSectionProps) => (
-    <div className="relative h-screen flex items-center justify-center bg-black cursor-pointer" onClick={onNextProject}>
+    <section
+        className="relative h-screen flex items-center justify-center bg-black"
+        aria-label={`Next project: ${title}`}
+    >
+        <button
+            onClick={onNextProject}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onNextProject()
+                }
+            }}
+            className="absolute inset-0 w-full h-full z-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+            aria-label={`View next project: ${title}`}
+        >
+            <span className="sr-only">View next project: {title}</span>
+        </button>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
             <div
                 data-next-project-title
@@ -446,5 +475,5 @@ const NextProjectSection = ({
                 />
             </Canvas>
         </div>
-    </div>
+    </section>
 )

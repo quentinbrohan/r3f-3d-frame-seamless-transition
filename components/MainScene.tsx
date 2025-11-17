@@ -436,8 +436,15 @@ const NavigationButton = ({
     <button
         onClick={onClick}
         className={`${NAVIGATION_BUTTON_BASE} ${direction === "prev" ? "left-4" : "right-4"}`}
+        aria-label={direction === "prev" ? "Previous project" : "Next project"}
     >
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-6 h-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+        >
             <path
                 stroke="currentColor"
                 strokeWidth={2}
@@ -477,20 +484,22 @@ const ProjectList = ({
     })
 
     return ((
-        <div ref={containerRef} className="grid grid-cols-12 px-8 w-full z-100 pt-32">
-            <ul className="col-start-9 col-end-13 text-white">
+        <nav ref={containerRef} className="grid grid-cols-12 px-8 w-full z-100 pt-32" aria-label="Project list">
+            <ul className="col-start-9 col-end-13 text-white" role="list">
                 {PROJECTS.map((project, i) => (
                     <li key={project.name} className="mb-0.5 last:mb-0">
                         <button
                             className={`text-2xl text-left ${currentIndex === i ? "opacity-100" : "opacity-60"
                                 } transition hover:opacity-100 leading-none`}
                             onClick={() => onSelectProject(i)}
+                            aria-label={`View ${project.name} project`}
+                            aria-current={currentIndex === i ? "page" : undefined}
                         >
                             {project.name}
                         </button>
                     </li>
                 ))}
             </ul>
-        </div>
+        </nav>
     ))
 };
