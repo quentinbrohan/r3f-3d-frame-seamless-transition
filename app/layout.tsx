@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import Header from '@/components/dom/Header'
 
 export const metadata: Metadata = {
   title: 'R3F 3D Frame Seamless Transition',
@@ -12,7 +13,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Header />
+        <main>
+          {children}
+        </main>
+      </body>
     </html>
   )
 }
