@@ -104,7 +104,7 @@ const MainScene: React.FC = () => {
 
             gsap.to(targetRotation, {
                 current: current + delta,
-                duration: 1,
+                duration: 0.8,
                 ease: "power2.inOut",
             });
         },
