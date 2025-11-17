@@ -8,6 +8,8 @@ import { CustomFrame, FRAME_PLANE_WIDTH, DEFAULT_FRAME_SCALE } from "./webgl/Cus
 import { ProjectContent } from "./ProjectContent";
 import "./webgl/shaders/transitionMaterial";
 import { ShaderTransitionMaterial } from "./webgl/shaders/transitionMaterial";
+import { useGSAP } from "@gsap/react";
+import { animateFadeUp, MOTION_CONFIG } from "@/lib/animations";
 
 const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
@@ -453,20 +455,42 @@ const ProjectList = ({
 }: {
     currentIndex: number;
     onSelectProject: (index: number) => void;
-}) => (
-    <div className="grid grid-cols-12 px-8 w-full z-100 pt-32">
-        <ul className="col-start-9 col-end-13 text-white">
-            {PROJECTS.map((project, i) => (
-                <li key={project.name} className="mb-0.5 last:mb-0">
-                    <button
-                        className={`text-2xl text-left ${currentIndex === i ? "opacity-100" : "opacity-60"
-                            } transition hover:opacity-100 leading-none`}
-                        onClick={() => onSelectProject(i)}
-                    >
-                        {project.name}
-                    </button>
-                </li>
-            ))}
-        </ul>
-    </div>
-);
+}) => {
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    useGSAP(() => {
+        if (!containerRef.current) return;
+
+        const container = gsap.utils.selector(containerRef)
+        const itemEls = container('li')
+
+        const tl = gsap.timeline();
+
+        tl.add(
+            animateFadeUp(itemEls, {
+                y: MOTION_CONFIG.Y_OFFSET.MD,
+                stagger: MOTION_CONFIG.STAGGER.MD
+            })
+        )
+    }, {
+        scope: containerRef
+    })
+
+    return ((
+        <div ref={containerRef} className="grid grid-cols-12 px-8 w-full z-100 pt-32">
+            <ul className="col-start-9 col-end-13 text-white">
+                {PROJECTS.map((project, i) => (
+                    <li key={project.name} className="mb-0.5 last:mb-0">
+                        <button
+                            className={`text-2xl text-left ${currentIndex === i ? "opacity-100" : "opacity-60"
+                                } transition hover:opacity-100 leading-none`}
+                            onClick={() => onSelectProject(i)}
+                        >
+                            {project.name}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    ))
+};
