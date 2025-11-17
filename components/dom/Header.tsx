@@ -72,13 +72,23 @@ const Header = () => {
                     data-header-center>
                     04:21 PM, CET
                 </time>
-                <a
+                {/* <a
                     href="mailto:hello@abnalem.com"
                     className="hover:text-white transition-colors"
                     data-header-center
                     aria-label="Send email to hello@abnalem.com"
                 >
                     hello@abnalem.com
+                </a> */}
+                <a
+                    href="https://www.instagram.com/abn.alem/"
+                    className="hover:text-white transition-colors"
+                    data-header-center
+                    aria-label="Instagram profile: @abn.alem"
+                    target='_blank'
+                    rel="noopener noreferrer"
+                >
+                    @abn.alem
                 </a>
             </div>
 
