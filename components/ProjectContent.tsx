@@ -76,7 +76,6 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         const nextProjectNameColorEl = container('[data-next-project-name-color]')
         const nextProjectNameStrokeEl = container('[data-next-project-name-stroke]')
 
-        // Fade out "Next Project" text elements first
         tl.add(
             animateFadeUpOut(nextProjectTitleEl, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
@@ -95,27 +94,22 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
             '<+=0.15'
         )
 
-        // Scale up frame (overlaps with fade-out)
         tl.to(frameRef.current.scale, {
             x: targetScale,
             y: targetScale,
             z: targetScale,
             duration: 0.8,
             ease: "cubic.inOut"
-        }, 0.2) // Start 0.2s after fade-out begins
+        }, 0.2)
 
-        // Call onNext() AFTER fade-out completes (assuming fade-out takes ~0.5s)
         tl.add(() => {
             onNext()
             setIsTransitioning(false)
-            // if (containerRef.current) {
-            //     containerRef.current.scrollTop = 0
-            // }
-        }, 0.6) // Adjust timing based on your fade-out duration
+        }, 0.6) // todo adjust based on scale progress since different on desktop and mobile
 
-        // Reset scale after everything completes
+
         tl.add(() => {
-            gsap.set(frameRef.current.scale, {
+            gsap.set(frameRef.current!.scale, {
                 x: DEFAULT_FRAME_SCALE,
                 y: DEFAULT_FRAME_SCALE,
                 z: DEFAULT_FRAME_SCALE,
@@ -124,7 +118,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
 
     }, [onNext])
 
-    // GSAP entrance animation
+
     useGSAP(() => {
         if (!containerRef.current || !isVisible || !currentProject) return
 
@@ -287,7 +281,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
             <div>
                 <ProjectHero project={currentProject} tags={tags} metadata={metadata} />
                 <ProjectImages images={currentProject.images} />
-                {Boolean(nextProject) && nextProject && (
+                {Boolean(nextProject) && (
                     <NextProjectSection
                         project={nextProject}
                         title={nextProjectTitle}

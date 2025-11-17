@@ -7,6 +7,7 @@ import { Project, PROJECTS } from "@/app/data";
 import { CustomFrame, FRAME_PLANE_WIDTH, DEFAULT_FRAME_SCALE } from "./webgl/CustomFrame";
 import { ProjectContent } from "./ProjectContent";
 import "./webgl/shaders/transitionMaterial";
+import { ShaderTransitionMaterial } from "./webgl/shaders/transitionMaterial";
 
 const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
@@ -15,7 +16,7 @@ const CAROUSEL_INITIAL_ROTATION_OFFSET = Math.PI;
 const NAVIGATION_BUTTON_BASE =
     "absolute top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition";
 
-type FrameRefs = React.MutableRefObject<Array<THREE.Group | null>>;
+type FrameRefs = React.RefObject<Array<THREE.Group | null>>;
 
 const normalizeAngle = (angle: number) => {
     const twoPi = 2 * Math.PI;
@@ -42,9 +43,9 @@ const MainScene: React.FC = () => {
 
     const frameRefs = useRef<Array<THREE.Group | null>>([]);
     const viewedIndexRef = useRef(0);
-    const meshRefFront = useRef<THREE.Mesh>(null);
-    const meshRefBack = useRef<THREE.Mesh>(null);
-    const groupRef = useRef<THREE.Group>(null);
+    const meshRefFront = useRef<ShaderTransitionMaterial | null>(null);
+    const meshRefBack = useRef<THREE.ShaderMaterial | null>(null);
+    const groupRef = useRef<THREE.Group | null>(null);
     const transitionRef = useRef(0);
     const targetRotation = useRef(CAROUSEL_INITIAL_ROTATION_OFFSET);
     const currentIndexRef = useRef(0);
@@ -193,11 +194,6 @@ const MainScene: React.FC = () => {
         handleStartMovement(true);
         viewedIndexRef.current = nextIndex;
         setCurrentProject(PROJECTS[nextIndex]);
-
-        // const overlayContainer = document.querySelector('[data-overlay-container]');
-        // if (overlayContainer) {
-        //     overlayContainer.scrollTop = 0;
-        // }
     }, [animateTransition, handleStartMovement]);
 
     const handleClose = useCallback(() => {
@@ -303,8 +299,8 @@ const MainScene: React.FC = () => {
 export default MainScene;
 
 interface EnvironmentPlanesProps {
-    frontRef: React.RefObject<THREE.Mesh>;
-    backRef: React.RefObject<THREE.Mesh>;
+    frontRef: React.RefObject<THREE.ShaderMaterial | null>;
+    backRef: React.RefObject<THREE.ShaderMaterial | null>;
 }
 
 const EnvironmentPlanes: React.FC<EnvironmentPlanesProps> = ({ frontRef, backRef }) => (

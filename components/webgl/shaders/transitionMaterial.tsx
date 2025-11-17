@@ -1,5 +1,6 @@
 import { shaderMaterial } from "@react-three/drei";
-import { extend } from "@react-three/fiber";
+import { ConstructorRepresentation, extend } from "@react-three/fiber";
+import * as THREE from "three";
 
 const TransitionMaterial = shaderMaterial(
   {
@@ -32,8 +33,11 @@ const TransitionMaterial = shaderMaterial(
 );
 extend({ TransitionMaterial });
 
+export type ShaderTransitionMaterial = InstanceType<typeof TransitionMaterial>;
+
 declare module '@react-three/fiber' {
   interface ThreeElements {
     transitionMaterial: typeof TransitionMaterial
   }
 }
+
