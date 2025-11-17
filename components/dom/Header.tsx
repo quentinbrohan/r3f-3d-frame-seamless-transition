@@ -1,15 +1,19 @@
 'use client';
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { animateFadeUp, MOTION_CONFIG } from '@/lib/animations'
+import { useStore } from '@/lib/store';
 
 const Header = () => {
     const headerRef = useRef<HTMLElement>(null)
+    const isLoaderLoaded = useStore((state) => state.isLoaderLoaded)
+    const tlRef = useRef<gsap.core.Timeline | null>(null)
+
 
     useGSAP(() => {
-        if (!headerRef.current) return
+        if (!headerRef.current || !isLoaderLoaded) return
 
         const container = gsap.utils.selector(headerRef)
         const logoEl = container('[data-header-logo]')
@@ -17,12 +21,12 @@ const Header = () => {
         const navEls = container('[data-header-nav]')
         const contactEl = container('[data-header-contact]')
 
-        const tl = gsap.timeline()
+        const tl = gsap.timeline({ id: 'header', paused: true })
 
         tl.add(
             animateFadeUp(logoEl, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
-            })
+            }), '<+=1'
         )
         tl.add(
             animateFadeUp(centerInfoEls, {
@@ -44,9 +48,18 @@ const Header = () => {
             }),
             '<+=0.1'
         )
+
+        tlRef.current = tl;
     }, {
-        scope: headerRef
+        scope: headerRef,
+        dependencies: [isLoaderLoaded]
     })
+
+    useEffect(() => {
+        if (isLoaderLoaded && tlRef.current)
+            tlRef.current.play()
+    }, [isLoaderLoaded])
+
 
     return (
         <nav

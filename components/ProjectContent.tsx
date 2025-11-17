@@ -68,7 +68,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
 
         setIsTransitioning(true)
 
-        const tl = gsap.timeline();
+        const tl = gsap.timeline({ id: 'project-content' });
         const targetScale = 1;
 
         const container = gsap.utils.selector(containerRef)

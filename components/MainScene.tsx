@@ -10,6 +10,7 @@ import "./webgl/shaders/transitionMaterial";
 import { ShaderTransitionMaterial } from "./webgl/shaders/transitionMaterial";
 import { useGSAP } from "@gsap/react";
 import { animateFadeUp, MOTION_CONFIG } from "@/lib/animations";
+import { useStore } from "@/lib/store";
 
 const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
@@ -464,24 +465,34 @@ const ProjectList = ({
     onSelectProject: (index: number) => void;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null)
+    const isLoaderLoaded = useStore((state) => state.isLoaderLoaded)
+    const tlRef = useRef<gsap.core.Timeline | null>(null)
 
     useGSAP(() => {
-        if (!containerRef.current) return;
+        if (!containerRef.current || !isLoaderLoaded) return;
 
         const container = gsap.utils.selector(containerRef)
         const itemEls = container('li')
 
-        const tl = gsap.timeline();
+        const tl = gsap.timeline({ id: 'project-list', paused: true });
 
         tl.add(
             animateFadeUp(itemEls, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
                 stagger: MOTION_CONFIG.STAGGER.MD
-            })
+            }), '<+=0.6'
         )
+
+        tlRef.current = tl;
     }, {
-        scope: containerRef
+        scope: containerRef,
+        dependencies: [isLoaderLoaded]
     })
+
+    useEffect(() => {
+        if (isLoaderLoaded && tlRef.current)
+            tlRef.current.play()
+    }, [isLoaderLoaded])
 
     return ((
         <nav ref={containerRef} className="grid grid-cols-12 px-8 w-full z-100 pt-32" aria-label="Project list">
