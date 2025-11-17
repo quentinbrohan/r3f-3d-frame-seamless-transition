@@ -1,6 +1,6 @@
 "use client"
 
-import Header from "@/components/Header"
+import Header from "@/components/dom/Header"
 import MainScene from "@/components/MainScene"
 import { Canvas, CanvasProps } from "@react-three/fiber"
 

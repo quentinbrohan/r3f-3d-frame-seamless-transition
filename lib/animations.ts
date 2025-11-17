@@ -61,7 +61,7 @@ export const animateFadeUpOut = (
   return gsap.to(target, {
     opacity: 0,
     y: MOTION_CONFIG.Y_OFFSET.MD,
-    duration: MOTION_CONFIG.DURATION.TRANSITION * 0.75,
+    duration: MOTION_CONFIG.DURATION.TRANSITION * 0.25,
     ...options,
   });
 };

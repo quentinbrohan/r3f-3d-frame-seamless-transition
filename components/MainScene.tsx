@@ -4,40 +4,9 @@ import { shaderMaterial, useTexture, CubeCamera, Html } from "@react-three/drei"
 import * as THREE from "three";
 import gsap from "gsap";
 import { Project, PROJECTS } from "@/app/data";
-import { CustomFrame, FRAME_PLANE_WIDTH, DEFAULT_FRAME_SCALE } from "./CustomFrame";
+import { CustomFrame, FRAME_PLANE_WIDTH, DEFAULT_FRAME_SCALE } from "./webgl/CustomFrame";
 import { ProjectContent } from "./ProjectContent";
-
-// === Shader material for texture blending ===
-const TransitionMaterial = shaderMaterial(
-    {
-        texture1: null,
-        texture2: null,
-        transition: 0,
-    },
-    `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-  }
-  `,
-    `
-  uniform sampler2D texture1;
-  uniform sampler2D texture2;
-  uniform float transition;
-  varying vec2 vUv;
-
-  void main() {
-    vec2 uv = vec2(vUv.x, 1.0 - vUv.y);
-    vec4 color1 = texture2D(texture1, uv);
-    vec4 color2 = texture2D(texture2, uv);
-    vec4 blended = mix(color1, color2, transition);
-    blended.rgb *= 0.6; // darken for reflection tone
-    gl_FragColor = blended;
-  }
-`
-);
-extend({ TransitionMaterial });
+import './webgl/shaders/transitionMaterial'
 
 const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
@@ -46,7 +15,7 @@ const CAROUSEL_INITIAL_ROTATION_OFFSET = Math.PI;
 
 const MainScene: React.FC = () => {
     const textures = useTexture(projectsMainImages);
-    const { camera, size: {
+    const { size: {
         width: viewportWidth
     } } = useThree();
 
@@ -59,9 +28,8 @@ const MainScene: React.FC = () => {
     }, [textures]);
 
     const frameRefs = useRef<Array<THREE.Group | null>>([]);
-    const viewedIndexRef = useRef(0); // Track which project is being viewed
+    const viewedIndexRef = useRef(0);
 
-    // Initialize refs array
     useEffect(() => {
         frameRefs.current = frameRefs.current.slice(0, PROJECTS.length);
     }, []);
@@ -70,18 +38,15 @@ const MainScene: React.FC = () => {
     const [currentProject, setCurrentProject] = useState(PROJECTS[0]);
     const [showContent, setShowContent] = useState(false);
 
-    const meshRefFront = useRef<any>();
-    const meshRefBack = useRef<any>();
-    const groupRef = useRef<any>();
+    const meshRefFront = useRef<THREE.Mesh>(null);
+    const meshRefBack = useRef<THREE.Mesh>(null);
+    const groupRef = useRef<THREE.Group>(null);
 
     const numFrames = projectsMainImages.length;
 
     const transitionRef = useRef(0);
     const targetRotation = useRef(CAROUSEL_INITIAL_ROTATION_OFFSET);
     const currentIndexRef = useRef(0);
-    const nextIndexRef = useRef(1);
-
-    //  camera.position.set(0, 0, 0);
 
     function setTargetRotationForIndex(nextIndex: number, direction = 1, skipAnimation = false) {
         const step = (2 * Math.PI) / numFrames;
@@ -92,7 +57,6 @@ const MainScene: React.FC = () => {
         let delta = desired - current;
         delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
 
-        // Standard direction enforcement (now intuitive)
         if (direction > 0 && delta < 0) delta += 2 * Math.PI;
         if (direction < 0 && delta > 0) delta -= 2 * Math.PI;
 
@@ -184,8 +148,6 @@ const MainScene: React.FC = () => {
 
     const handleNext = () => {
         const next = (currentIndexRef.current + 1) % textures.length;
-        const nextP = PROJECTS[next]
-
         animateTransition(next, 1);
     };
 
@@ -306,7 +268,6 @@ const MainScene: React.FC = () => {
         animateTransition(index, direction);
     };
 
-
     useFrame(() => {
         if (!groupRef.current) return;
 
@@ -327,17 +288,20 @@ const MainScene: React.FC = () => {
 
     return (
         <>
-            <mesh position={[0, 0, -5]}>
-                <planeGeometry args={[20, 20]} />
-                <transitionMaterial ref={meshRefBack} toneMapped={false} />
-            </mesh>
+            <group name="Environments">
+                <mesh position={[0, 0, -5]}>
+                    <planeGeometry args={[20, 20]} />
+                    <transitionMaterial ref={meshRefBack} toneMapped={false} />
+                </mesh>
 
-            <mesh position={[0, 0, 5]} rotation={[0, Math.PI, 0]}>
-                <planeGeometry args={[20, 20]} />
-                <transitionMaterial ref={meshRefFront} toneMapped={false} />
-            </mesh>
+                <mesh position={[0, 0, 5]} rotation={[0, Math.PI, 0]}>
+                    <planeGeometry args={[20, 20]} />
+                    <transitionMaterial ref={meshRefFront} toneMapped={false} />
+                </mesh>
+            </group>
 
-            <CubeCamera frames={Infinity} resolution={256} near={0.1} far={1000} position={[0, 0, 2]}>
+
+            <CubeCamera frames={Infinity} resolution={512} near={0.1} far={1000} position={[0, 0, 2]}>
                 {(texture) => (
                     <group ref={groupRef}>
                         {projectsMainImages.map((img, i) => {
@@ -357,6 +321,7 @@ const MainScene: React.FC = () => {
                                     isFollowingCursor={!showContent}
                                     ref={(el) => (frameRefs.current[i] = el)}
                                     isFloating={!showContent}
+                                    index={i}
                                 />
                             );
                         })}
@@ -364,9 +329,11 @@ const MainScene: React.FC = () => {
                 )}
             </CubeCamera>
 
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[5, 5, 5]} intensity={2} />
-            <pointLight position={[0, 5, -5]} intensity={0.8} />
+            <group name="Lights">
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[5, 5, 5]} intensity={2} />
+                <pointLight position={[0, 5, -5]} intensity={0.8} />
+            </group>
 
             {currentProject && (
                 <Html
@@ -417,7 +384,6 @@ const MainScene: React.FC = () => {
                                             className={`text-2xl text-left ${currentIndex === i ? 'opacity-100' : 'opacity-60'} transition hover:opacity-100 leading-none`}
                                             onClick={() => handleSelectProject(i)}
                                         >
-
                                             {project.name}
                                         </button>
                                     </li>

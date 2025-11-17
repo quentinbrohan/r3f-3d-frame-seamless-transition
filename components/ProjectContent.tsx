@@ -3,7 +3,7 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
-import { CustomFrame, DEFAULT_FRAME_SCALE, FRAME_PLANE_WIDTH } from './CustomFrame'
+import { CustomFrame, DEFAULT_FRAME_SCALE, FRAME_PLANE_WIDTH } from './webgl/CustomFrame'
 import { Project, PROJECT_CATEGORY, PROJECTS } from '@/app/data'
 import { animateFadeUp, animateFadeUpOut, MOTION_CONFIG } from '@/lib/animations'
 import { SHARED_CANVAS_PROPS } from '@/app/page'
@@ -407,6 +407,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext, vie
               <pointLight position={[5, -5, 5]} intensity={0.3} />
               <Environment preset="city" />
               <CustomFrame
+                index={0}
                 image={nextProject.images[0]}
                 lookAtCamera={!isTransitionning}
                 ref={frameRef}
