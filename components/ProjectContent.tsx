@@ -3,7 +3,7 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
-import { CustomFrame } from './CustomFrame'
+import { CustomFrame, DEFAULT_FRAME_SCALE } from './CustomFrame'
 import { Project, PROJECT_CATEGORY, PROJECTS } from '@/app/data'
 import { animateFadeUp, MOTION_CONFIG } from '@/lib/animations'
 
@@ -33,6 +33,39 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
   const currentProjectIndex = PROJECTS.findIndex(p => p.id === currentProject.id)
   const nextProjectIndex = (currentProjectIndex + 1) % PROJECTS.length
   const nextProject = PROJECTS[nextProjectIndex]
+
+  const [showOverlayCanvas, setShowOverlayCanvas] = useState(true);
+  const frameRef = useRef()
+
+  const onNextProject = () => {
+    if (!frameRef.current || !containerRef.current) return;
+
+    const tl = gsap.timeline();
+    const targetScale = 1;
+    tl.to(frameRef.current.scale, {
+      x: targetScale,
+      y: targetScale,
+      z: targetScale,
+      duration: 0.8,
+      ease: "cubic.inOut",
+      onUpdate: () => {
+        if (frameRef.current.scale.x > targetScale * 0.7) {
+          // setShowContent(true);
+          onNext()
+          containerRef.current.scrollTop = 0
+        }
+      },
+      onComplete: () => {
+        const scaleDown = DEFAULT_FRAME_SCALE * 0.75
+        gsap.set(frameRef.current.scale, {
+          x: scaleDown,
+          y: scaleDown,
+          z: scaleDown,
+        })
+      }
+    });
+
+  }
 
   const nextProjectTitle = nextProject?.name
   const nextProjectTitleArray = nextProjectTitle
@@ -298,7 +331,8 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
 
         {/* Next Project */}
         {Boolean(nextProject) && (<div className="relative h-screen flex items-center justify-center bg-black cursor-pointer"
-          onClick={onNext}
+          // onClick={onNext}
+          onClick={onNextProject}
         >
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
             <div data-next-project className="absolute text-white text-xl font-light z-[2] pointer-events-none"
@@ -333,6 +367,9 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                 image={nextProject.images[0]}
                 lookAtCamera
                 scaleFactor={0.75}
+                ref={frameRef}
+                key={nextProject.id} // TODO: update material directly instead
+              // visible={false}
               />
             </Canvas>
           </div>

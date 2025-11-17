@@ -82,7 +82,7 @@ const MainScene: React.FC = () => {
 
     camera.position.set(0, 0, 0);
 
-    function setTargetRotationForIndex(nextIndex: number, direction = 1) {
+    function setTargetRotationForIndex(nextIndex: number, direction = 1, skipAnimation = false) {
         const step = (2 * Math.PI) / numFrames;
         const current = targetRotation.current;
 
@@ -95,18 +95,26 @@ const MainScene: React.FC = () => {
         if (direction > 0 && delta < 0) delta += 2 * Math.PI;
         if (direction < 0 && delta > 0) delta -= 2 * Math.PI;
 
-        gsap.to(targetRotation, {
-            current: current + delta,
-            duration: 1,
-            ease: "power2.inOut",
-        });
+
+        if (skipAnimation) {
+            // Instant rotation - set both target AND actual rotation
+            targetRotation.current = current + delta;
+            if (groupRef.current) {
+                groupRef.current.rotation.y = current + delta; // Add this line
+            }
+            return;
+        } else {
+            gsap.to(targetRotation, {
+                current: current + delta,
+                duration: 1,
+                ease: "power2.inOut",
+            });
+        }
+
     }
 
-    const animateTransition = (next: number, direction: 1 | -1) => {
+    const animateTransition = (next: number, direction: 1 | -1, skipAnimation = false) => {
         const current = currentIndexRef.current;
-
-        console.log({ textures, current, next });
-
 
         if (meshRefFront.current && meshRefBack.current) {
             meshRefFront.current.uniforms.texture1.value = textures[current];
@@ -118,47 +126,64 @@ const MainScene: React.FC = () => {
             meshRefBack.current.uniforms.transition.value = 0;
         }
 
-        setTargetRotationForIndex(next, direction);
+        setTargetRotationForIndex(next, direction, skipAnimation);
 
-        gsap.to(transitionRef, {
-            current: 1,
-            duration: 0.8,
-            ease: "power2.inOut",
-            onUpdate: () => {
-                const t = transitionRef.current;
-                if (meshRefFront.current && meshRefBack.current) {
-                    meshRefFront.current.uniforms.transition.value = t;
-                    meshRefBack.current.uniforms.transition.value = t;
-                }
-            },
-            onComplete: () => {
-                // Commit final state
-                currentIndexRef.current = next;
-                transitionRef.current = 0;
+        if (skipAnimation) {
+            // Instant state change - no GSAP animation
+            currentIndexRef.current = next;
+            transitionRef.current = 0;
 
-                // Reset both uniforms to the new "current" texture
-                if (meshRefFront.current && meshRefBack.current) {
-                    meshRefFront.current.uniforms.texture1.value = textures[next];
-                    meshRefFront.current.uniforms.texture2.value = textures[next];
-                    meshRefFront.current.uniforms.transition.value = 0;
+            if (meshRefFront.current && meshRefBack.current) {
+                meshRefFront.current.uniforms.texture1.value = textures[next];
+                meshRefFront.current.uniforms.texture2.value = textures[next];
+                meshRefFront.current.uniforms.transition.value = 0;
 
-                    meshRefBack.current.uniforms.texture1.value = textures[next];
-                    meshRefBack.current.uniforms.texture2.value = textures[next];
-                    meshRefBack.current.uniforms.transition.value = 0;
-                }
+                meshRefBack.current.uniforms.texture1.value = textures[next];
+                meshRefBack.current.uniforms.texture2.value = textures[next];
+                meshRefBack.current.uniforms.transition.value = 0;
+            }
 
-                setCurrentIndex(next);
-                setCurrentProject(PROJECTS[next]);
-            },
-        });
+            setCurrentIndex(next);
+            setCurrentProject(PROJECTS[next]);
+            return;
+        } else {
+            // Normal animated transition
+            gsap.to(transitionRef, {
+                current: 1,
+                duration: 0.8,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    const t = transitionRef.current;
+                    if (meshRefFront.current && meshRefBack.current) {
+                        meshRefFront.current.uniforms.transition.value = t;
+                        meshRefBack.current.uniforms.transition.value = t;
+                    }
+                },
+                onComplete: () => {
+                    currentIndexRef.current = next;
+                    transitionRef.current = 0;
+
+                    if (meshRefFront.current && meshRefBack.current) {
+                        meshRefFront.current.uniforms.texture1.value = textures[next];
+                        meshRefFront.current.uniforms.texture2.value = textures[next];
+                        meshRefFront.current.uniforms.transition.value = 0;
+
+                        meshRefBack.current.uniforms.texture1.value = textures[next];
+                        meshRefBack.current.uniforms.texture2.value = textures[next];
+                        meshRefBack.current.uniforms.transition.value = 0;
+                    }
+
+                    setCurrentIndex(next);
+                    setCurrentProject(PROJECTS[next]);
+                },
+            });
+        }
+
     };
-
-
 
     const handleNext = () => {
         const next = (currentIndexRef.current + 1) % textures.length;
         const nextP = PROJECTS[next]
-        console.log({ next, nextP });
 
         animateTransition(next, 1);
     };
@@ -168,76 +193,61 @@ const MainScene: React.FC = () => {
         animateTransition(prev, -1);
     };
 
-    const hasIntersected = useRef(false);
-
-    const handleStartMovement = () => {
+    const handleStartMovement = (skipAnimation = false) => {
         const activeFrame = frameRefs.current[currentIndexRef.current];
         if (!activeFrame) return;
 
         viewedIndexRef.current = currentIndexRef.current;
 
-        const tl = gsap.timeline();
-
-        // TODO: need group width and not plane? Scale is on group but here we animate only for the plane within to be 100% viewport width
-        const currentWidth = FRAME_PLANE_WIDTH * DEFAULT_FRAME_SCALE;
-
         const targetScale = ((viewportWidth / FRAME_PLANE_WIDTH) * DEFAULT_FRAME_SCALE) / 2;
 
-
-        // Scale up the frame
-        tl.to(activeFrame.scale, {
-            x: targetScale,
-            y: targetScale,
-            z: targetScale,
-            duration: 0.8,
-            ease: "cubic.inOut",
-            onUpdate: () => {
-                if (activeFrame.scale.x >= targetScale * 1) {
-                    setShowContent(true);
+        if (skipAnimation) {
+            // Instant state change - no animation
+            activeFrame.scale.set(targetScale, targetScale, targetScale);
+            setShowContent(true);
+            return;
+        } else {
+            // Normal animated transition
+            const tl = gsap.timeline();
+            tl.to(activeFrame.scale, {
+                x: targetScale,
+                y: targetScale,
+                z: targetScale,
+                duration: 0.8,
+                ease: "cubic.inOut",
+                onUpdate: () => {
+                    if (activeFrame.scale.x > targetScale * 0.7) {
+                        setShowContent(true);
+                    }
                 }
-            }
-        });
+            });
+        }
+
     };
 
     const handleNextFromOverlay = () => {
-        const currentFrame = frameRefs.current[viewedIndexRef.current];
         const nextIndex = (viewedIndexRef.current + 1) % PROJECTS.length;
-        const nextFrame = frameRefs.current[nextIndex];
 
-        if (!currentFrame || !nextFrame) return;
+        // Step 1: Rotate main canvas carousel (instant, no animation)
+        animateTransition(nextIndex, 1, true);
 
-        const tl = gsap.timeline();
+        // Step 2: Update main canvas to new project state (skip animation)
+        currentIndexRef.current = nextIndex;
+        handleStartMovement(true); // Skip animation - instant scale up
 
-        // Scale down current frame
-        tl.to(currentFrame.scale, {
-            x: DEFAULT_FRAME_SCALE,
-            y: DEFAULT_FRAME_SCALE,
-            z: DEFAULT_FRAME_SCALE,
-            duration: 0.6,
-            ease: "cubic.inOut"
-        });
+        // Step 3: Trigger overlay canvas animation
+        // (This happens in the separate Canvas in ProjectContent)
+        // The overlay canvas frame scales up with animation
 
-        // Rotate carousel to next project
-        tl.add(() => {
-            animateTransition(nextIndex, 1);
-        }, 0.2);
+        // Step 4: Update state to trigger overlay content refresh
+        viewedIndexRef.current = nextIndex;
+        setCurrentProject(PROJECTS[nextIndex]);
 
-        // Scale up next frame (overlap for seamless feel)
-        const targetScale = ((viewportWidth / FRAME_PLANE_WIDTH) * DEFAULT_FRAME_SCALE) / 2;
-
-        tl.to(nextFrame.scale, {
-            x: targetScale,
-            y: targetScale,
-            z: targetScale,
-            duration: 0.6,
-            ease: "cubic.inOut"
-        }, "-=0.4");
-
-        // Update state
-        tl.add(() => {
-            viewedIndexRef.current = nextIndex;
-            setCurrentProject(PROJECTS[nextIndex]);
-        }, 0.5);
+        // Step 5: Scroll overlay to top
+        const overlayContainer = document.querySelector('[data-overlay-container]');
+        if (overlayContainer) {
+            overlayContainer.scrollTop = 0;
+        }
     };
 
     const handleClose = () => {
@@ -338,7 +348,7 @@ const MainScene: React.FC = () => {
                                     position={[x, 0, z]}
                                     rotation={[0, rotationY, 0]}
                                     envMap={texture}
-                                    onClick={handleStartMovement}
+                                    onClick={() => handleStartMovement()}
                                     isFollowingCursor={!showContent}
                                     ref={(el) => (frameRefs.current[i] = el)}
                                     // isFollowingCursor
