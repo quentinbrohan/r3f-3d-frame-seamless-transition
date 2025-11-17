@@ -3,9 +3,12 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
-import { CustomFrame, DEFAULT_FRAME_SCALE } from './CustomFrame'
+import { CustomFrame, DEFAULT_FRAME_SCALE, FRAME_PLANE_WIDTH } from './CustomFrame'
 import { Project, PROJECT_CATEGORY, PROJECTS } from '@/app/data'
-import { animateFadeUp, MOTION_CONFIG } from '@/lib/animations'
+import { animateFadeUp, animateFadeUpOut, MOTION_CONFIG } from '@/lib/animations'
+import { SHARED_CANVAS_PROPS } from '@/app/page'
+import { CAROUSEL_RADIUS } from './MainScene'
+import * as THREE from "three";
 
 const AVAILABILITIES_OPTIONS = {
   AVAILABLE: 'AVAILABLE',
@@ -24,9 +27,10 @@ interface ProjectContentProps {
   onClose: () => void
   currentProject: Project
   onNext: () => void;
+  viewportWidth: number;
 }
 
-export function ProjectContent({ isVisible, onClose, currentProject, onNext }: ProjectContentProps) {
+export function ProjectContent({ isVisible, onClose, currentProject, onNext, viewportWidth }: ProjectContentProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
 
@@ -35,10 +39,14 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
   const nextProject = PROJECTS[nextProjectIndex]
 
   const [showOverlayCanvas, setShowOverlayCanvas] = useState(true);
-  const frameRef = useRef()
+  const [isTransitionning, setIsTransitionning] = useState(false)
+  const frameRef = useRef<THREE.Group>(null)
 
   const onNextProject = () => {
     if (!frameRef.current || !containerRef.current) return;
+
+    setIsTransitionning(true)
+    let hasFadeOut = false;
 
     const tl = gsap.timeline();
     const targetScale = 1;
@@ -48,36 +56,61 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
       z: targetScale,
       duration: 0.8,
       ease: "cubic.inOut",
+      onStart: () => {
+        const container = gsap.utils.selector(containerRef)
+
+        const nextProjectTitleEl = container('[data-next-project-title]')
+        const nextProjectNameColorEl = container('[data-next-project-name-color]')
+        const nextProjectNameStrokeEl = container('[data-next-project-name-stroke]')
+
+
+        const subTl = gsap.timeline();
+
+
+        subTl.add(
+          animateFadeUpOut(nextProjectTitleEl, {
+            y: MOTION_CONFIG.Y_OFFSET.MD,
+          })
+        )
+          .add(
+            animateFadeUpOut(nextProjectNameColorEl, {
+              y: MOTION_CONFIG.Y_OFFSET.LG
+            }),
+            '<+=0.15')
+          .add(
+            animateFadeUpOut(nextProjectNameStrokeEl, {
+              y: MOTION_CONFIG.Y_OFFSET.LG
+            }),
+            '<+=0.15'
+          )
+
+      },
       onUpdate: () => {
-        if (frameRef.current.scale.x > targetScale * 0.7) {
-          // setShowContent(true);
+        if (frameRef.current.scale.x > targetScale * 0.7 && !hasFadeOut) {
+          // timelineRef.current?.timeScale(6).reverse()
+
+
+          hasFadeOut = true;
           onNext()
-          containerRef.current.scrollTop = 0
+          setIsTransitionning(false)
         }
       },
       onComplete: () => {
-        const scaleDown = DEFAULT_FRAME_SCALE * 0.75
         gsap.set(frameRef.current.scale, {
-          x: scaleDown,
-          y: scaleDown,
-          z: scaleDown,
+          x: DEFAULT_FRAME_SCALE,
+          y: DEFAULT_FRAME_SCALE,
+          z: DEFAULT_FRAME_SCALE,
         })
+        hasFadeOut = false;
       }
     });
 
   }
 
+  // Add ref to track fade state
+  const hasFadedOut = useRef(false)
+
   const nextProjectTitle = nextProject?.name
-  const nextProjectTitleArray = nextProjectTitle
-    ? [
-      nextProjectTitle.slice(0, Math.ceil(nextProjectTitle.length / 3)),
-      nextProjectTitle.slice(
-        Math.ceil(nextProjectTitle.length / 3),
-        Math.ceil((2 * nextProjectTitle.length) / 3)
-      ),
-      nextProjectTitle.slice(Math.ceil((2 * nextProjectTitle.length) / 3))
-    ]
-    : []
 
   // GSAP entrance animation
   useGSAP(() => {
@@ -95,15 +128,16 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
     const tagEls = container('[data-tag-item]')
     const metadataEls = container('[data-metadata-item]')
     const imageEls = container('[data-image-item]')
-    const nextProjectEl = container('[data-next-project]')
+    const nextProjectTitleEl = container('[data-next-project-title]')
+    const nextProjectNameColorEl = container('[data-next-project-name-color]')
+    const nextProjectNameStrokeEl = container('[data-next-project-name-stroke]')
 
     const alphaEls = [containerRef, backgroundImageEl]
-    const fadeEls = [backToIndexEl, titleEl, descriptionEl, tagEls, metadataEls, imageEls, nextProjectEl].filter(Boolean)
+    const fadeEls = [backToIndexEl, titleEl, descriptionEl, tagEls, metadataEls, imageEls, nextProjectTitleEl, nextProjectNameColorEl, nextProjectNameStrokeEl].filter(Boolean)
     alphaEls.forEach((el) => gsap.set(el, { autoAlpha: 1 }))
     fadeEls.forEach((el) => gsap.set(el, { opacity: 1, y: 0 }))
 
     // TODO: gsap default config
-    // UPD animation.
     tl.add(
       gsap.fromTo(
         containerRef.current,
@@ -163,10 +197,16 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         y: MOTION_CONFIG.Y_OFFSET.LG,
         stagger: MOTION_CONFIG.STAGGER.LG
       }), '<=0.15')
-    if (nextProjectEl) {
-      tl.add(animateFadeUp(nextProjectEl, {
+    if (nextProjectTitleEl) {
+      tl.add(animateFadeUp(nextProjectTitleEl, {
         y: MOTION_CONFIG.Y_OFFSET.MD,
       }), '<=0.15')
+        .add(animateFadeUp(nextProjectNameColorEl, {
+          y: MOTION_CONFIG.Y_OFFSET.LG,
+        }), '<=0.15')
+        .add(animateFadeUp(nextProjectNameStrokeEl, {
+          y: MOTION_CONFIG.Y_OFFSET.LG,
+        }), '<=0.15')
     }
 
     timelineRef.current = tl;
@@ -185,6 +225,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
       if (!timelineRef.current) return
 
       if (currentProject && isVisible) {
+        containerRef.current.scrollTop = 0
         timelineRef.current.play()
       } else {
         timelineRef.current.timeScale(6).reverse()
@@ -335,18 +376,18 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
           onClick={onNextProject}
         >
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-            <div data-next-project className="absolute text-white text-xl font-light z-[2] pointer-events-none"
+            <div data-next-project-title className="absolute text-white text-xl font-light z-[2] pointer-events-none"
               style={{
                 top: 16
               }}
             >NEXT PROJECT</div>
-            <h2 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap" style={{
+            <h2 data-next-project-name-color className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap" style={{
               color: 'white',
               WebkitTextStroke: '1px white'
             }}>
               {nextProjectTitle}
             </h2>
-            <h2 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
+            <h2 data-next-project-name-stroke className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
               style={{
                 color: 'transparent',
                 WebkitTextStroke: '1px white',
@@ -357,7 +398,9 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
           </div>
 
           <div className="w-full h-screen z-[1]">
-            <Canvas camera={{ position: [0, 0, 3], fov: 50 }} shadows>
+            <Canvas
+              {...SHARED_CANVAS_PROPS}
+            >
               <ambientLight intensity={0.2} />
               <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
               <pointLight position={[-5, 5, 5]} intensity={0.5} />
@@ -365,11 +408,10 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
               <Environment preset="city" />
               <CustomFrame
                 image={nextProject.images[0]}
-                lookAtCamera
-                scaleFactor={0.75}
+                lookAtCamera={!isTransitionning}
                 ref={frameRef}
                 key={nextProject.id} // TODO: update material directly instead
-              // visible={false}
+                position={[0, 0, -(CAROUSEL_RADIUS / 2)]} // /2 because looking at carousel from its center
               />
             </Canvas>
           </div>

@@ -42,11 +42,26 @@ export const animateNavToPageFadeOut = (
   }).call(() => router.push(href));
 };
 
-export const animateFadeUp = (target: gsap.TweenTarget, options: Partial<gsap.TweenVars> = {}) => {
+export const animateFadeUp = (
+  target: gsap.TweenTarget,
+  options: Partial<gsap.TweenVars> = {}
+) => {
   return gsap.from(target, {
     opacity: 0,
     y: MOTION_CONFIG.Y_OFFSET.MD,
     duration: MOTION_CONFIG.DURATION.TRANSITION,
     ...options,
   });
-}
+};
+
+export const animateFadeUpOut = (
+  target: gsap.TweenTarget,
+  options: Partial<gsap.TweenVars> = {}
+) => {
+  return gsap.to(target, {
+    opacity: 0,
+    y: MOTION_CONFIG.Y_OFFSET.MD,
+    duration: MOTION_CONFIG.DURATION.TRANSITION * 0.75,
+    ...options,
+  });
+};

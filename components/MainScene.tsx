@@ -41,6 +41,9 @@ extend({ TransitionMaterial });
 
 const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
+export const CAROUSEL_RADIUS = 5;
+const CAROUSEL_INITIAL_ROTATION_OFFSET = Math.PI;
+
 const MainScene: React.FC = () => {
     const textures = useTexture(projectsMainImages);
     const { camera, size: {
@@ -72,21 +75,19 @@ const MainScene: React.FC = () => {
     const groupRef = useRef<any>();
 
     const numFrames = projectsMainImages.length;
-    const radius = 5;
-    const initialRotationOffset = Math.PI;
 
     const transitionRef = useRef(0);
-    const targetRotation = useRef(initialRotationOffset);
+    const targetRotation = useRef(CAROUSEL_INITIAL_ROTATION_OFFSET);
     const currentIndexRef = useRef(0);
     const nextIndexRef = useRef(1);
 
-    camera.position.set(0, 0, 0);
+    //  camera.position.set(0, 0, 0);
 
     function setTargetRotationForIndex(nextIndex: number, direction = 1, skipAnimation = false) {
         const step = (2 * Math.PI) / numFrames;
         const current = targetRotation.current;
 
-        const desired = (nextIndex * step + initialRotationOffset); // Remove the negative
+        const desired = (nextIndex * step + CAROUSEL_INITIAL_ROTATION_OFFSET); // Remove the negative
 
         let delta = desired - current;
         delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
@@ -265,13 +266,17 @@ const MainScene: React.FC = () => {
 
         const tl = gsap.timeline();
 
-        // Scale down the frame
-        tl.to(activeFrame.scale, {
-            x: DEFAULT_FRAME_SCALE,
-            y: DEFAULT_FRAME_SCALE,
-            z: DEFAULT_FRAME_SCALE,
-            duration: 0.8,
-            ease: "cubic.inOut"
+        // Scale down ALL frames to ensure no leftover scaled frames
+        frameRefs.current.forEach((frame) => {
+            if (frame && frame.scale.x > DEFAULT_FRAME_SCALE) {
+                tl.to(frame.scale, {
+                    x: DEFAULT_FRAME_SCALE,
+                    y: DEFAULT_FRAME_SCALE,
+                    z: DEFAULT_FRAME_SCALE,
+                    duration: 0.8,
+                    ease: "cubic.inOut"
+                }, 0); // Start all at same time
+            }
         });
     };
 
@@ -302,7 +307,7 @@ const MainScene: React.FC = () => {
     };
 
 
-    useFrame((state) => {
+    useFrame(() => {
         if (!groupRef.current) return;
 
         // Smoothly ease group rotation toward target
@@ -337,8 +342,8 @@ const MainScene: React.FC = () => {
                     <group ref={groupRef}>
                         {projectsMainImages.map((img, i) => {
                             const angle = -(i / numFrames) * Math.PI * 2;
-                            const x = Math.sin(angle) * radius;
-                            const z = Math.cos(angle) * radius;
+                            const x = Math.sin(angle) * CAROUSEL_RADIUS;
+                            const z = Math.cos(angle) * CAROUSEL_RADIUS;
                             const rotationY = angle + Math.PI;
 
                             return (
@@ -351,7 +356,6 @@ const MainScene: React.FC = () => {
                                     onClick={() => handleStartMovement()}
                                     isFollowingCursor={!showContent}
                                     ref={(el) => (frameRefs.current[i] = el)}
-                                    // isFollowingCursor
                                     isFloating={!showContent}
                                 />
                             );
@@ -399,6 +403,7 @@ const MainScene: React.FC = () => {
                             onClose={handleClose}
                             currentProject={currentProject}
                             onNext={handleNextFromOverlay}
+                            viewportWidth={viewportWidth}
                         />
 
                         <div className="grid grid-cols-12 px-8 w-full z-100 pt-32">

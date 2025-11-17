@@ -27,28 +27,21 @@ type GLTFResult = GLTF & {
 
 interface CustomFrameProps {
     image: string;
-    onThroughPlane: () => void
-    isMovingThrough: boolean
     position?: [number, number, number]
     rotation?: [number, number, number]
     envMap?: THREE.Texture
     lookAtCamera?: boolean
     isFloating?: boolean;
     isFollowingCursor?: boolean;
-    scaleFactor?: number;
-
 }
 
 export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameProps) {
     const {
-        onThroughPlane,
-        isMovingThrough,
         image,
         envMap,
         lookAtCamera,
         isFloating = false,
         isFollowingCursor = true,
-        scaleFactor = 1,
         ref,
     } = props
     const groupRef = useRef()
@@ -90,11 +83,6 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
     useCursor(hovered && isFollowingCursor, /*'pointer', 'auto', document.body*/)
 
     if (texture) texture.flipY = false
-
-    const handleDoubleClick = (event: any) => {
-        event.stopPropagation()
-        onThroughPlane()
-    }
 
     const handleMouseMove = (event: any) => {
         // Convert mouse position to normalized device coordinates (-1 to +1)
@@ -172,7 +160,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
 
     return (
         <group {...props} dispose={null}
-            scale={DEFAULT_FRAME_SCALE * scaleFactor}
+            scale={DEFAULT_FRAME_SCALE}
             ref={mergeRefs(groupRef, ref)}
             onPointerMove={handleMouseMove}
 
@@ -188,11 +176,6 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
                 scale={79.651}
             >
                 <meshStandardMaterial
-                    // color="#808080"
-                    // color="#f1f3f9"
-                    // metalness={1}
-                    // roughness={0.2}
-                    // envMapIntensity={2}
                     {...metalTextures}
                     displacementScale={0.1} // Adjust to taste
                     metalness={1}
@@ -210,9 +193,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
                 receiveShadow
                 geometry={nodes.Plane002.geometry}
                 material={nodes.Plane002.material}
-                onDoubleClick={handleDoubleClick}
                 onPointerOver={() => set(true)} onPointerOut={() => set(false)}
-            // TODO: get width of this
             >
                 <meshStandardMaterial
                     map={texture}
