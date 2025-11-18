@@ -25,6 +25,9 @@ type GLTFResult = GLTF & {
     }
 }
 
+const MODEL_PATH = '/webgl/models/custom-frame-draco-compressed.glb'
+useGLTF.preload(MODEL_PATH)
+
 interface CustomFrameProps {
     image: string;
     position?: [number, number, number]
@@ -46,33 +49,30 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         ref,
         index
     } = props
-    const groupRef = useRef()
-    const planeRef = useRef()
+    const groupRef = useRef<THREE.Group | null>(null)
+    const planeRef = useRef<THREE.Mesh | null>(null)
 
 
-    const { nodes, materials } = useGLTF('/custom-frame.glb') as GLTFResult
+    const { nodes, materials } = useGLTF(MODEL_PATH) as unknown as GLTFResult
     const texture = useTexture(image)
-    const metalBasePath = '/images/Metal003_1K-JPG'
-    const metalBaseName = 'Metal003_1K-JPG'
-    const combinedPath = `${metalBasePath}/${metalBaseName}`
+    const metalFilenameBase = 'Metal003_1K-JPG'
+    const metalBasePath = `/webgl/textures/${metalFilenameBase}`
+    const combinedPathPrefix = `${metalBasePath}/${metalFilenameBase}`
     const metalTextures = useTexture({
-        map: `${combinedPath}_Color.jpg`,
-        normalMap: `${combinedPath}_NormalGL.jpg`,
-        roughnessMap: `${combinedPath}_Roughness.jpg`,
-        metalnessMap: `${combinedPath}_Metalness.jpg`,
+        map: `${combinedPathPrefix}_Color.jpg`,
+        normalMap: `${combinedPathPrefix}_NormalGL.jpg`,
+        roughnessMap: `${combinedPathPrefix}_Roughness.jpg`,
+        metalnessMap: `${combinedPathPrefix}_Metalness.jpg`,
         // displacementMap: `${combinedPath}_Displacement.jpg`,
     })
 
     const { camera } = useThree()
-    // const mouse = useRef(new THREE.Vector2(0, 0))
-    // At the top-level of your component
     const mouse = useRef({ x: 0, y: 0 })
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            // Normalize to [-0.5, 0.5], 0 at center
             mouse.current.x = (e.clientX / window.innerWidth - 0.5)
-            mouse.current.y = (0.5 - e.clientY / window.innerHeight) // invert Y for natural rotation
+            mouse.current.y = (0.5 - e.clientY / window.innerHeight)
         }
 
         window.addEventListener('mousemove', handleMouseMove)
@@ -81,13 +81,11 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
 
 
     const [hovered, set] = useState(false)
-    // TODO: update, only hover in list page when overlay closed, atm cursor follow only in this case
-    useCursor(hovered && isFollowingCursor, /*'pointer', 'auto', document.body*/)
+    useCursor(hovered && isFollowingCursor)
 
     if (texture) texture.flipY = false
 
     const handleMouseMove = (event: any) => {
-        // Convert mouse position to normalized device coordinates (-1 to +1)
         mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1
         mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1
     }
@@ -97,22 +95,17 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
 
         const elapsed = state.clock.elapsedTime
 
-        // --- Floating vertical motion with smooth transition ---
         const targetY = isFloating ? Math.sin(elapsed * 0.6) * 0.15 : 0
 
-        // Smoothly interpolate to target Y position
         groupRef.current.position.y += (targetY - groupRef.current.position.y) * 0.1
 
-        // --- Determine look-at target ---
         const target = lookAtCamera ? camera.position : new THREE.Vector3(0, 0, 0)
 
-        // Compute target look-at quaternion
         const tempObject = new THREE.Object3D()
         tempObject.position.copy(groupRef.current.position)
         tempObject.lookAt(target)
         const lookAtQuat = tempObject.quaternion.clone()
 
-        // --- Mouse & floating offsets ---
         const mouseInfluence = 0.1
         const horizontalScale = 1.4 * 3
 
@@ -126,39 +119,37 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         const offsetQuat = new THREE.Quaternion()
         offsetQuat.setFromEuler(eulerOffset)
 
-        // Apply offset if following cursor
         if (isFollowingCursor) {
             lookAtQuat.multiply(offsetQuat)
         }
 
-        // --- SMOOTH TRANSITION: Lerp quaternion instead of direct copy ---
         groupRef.current.quaternion.slerp(lookAtQuat, 0.125) // 0.125 = lerp speed (adjust for smoothness)
     })
 
     // debug only to get frame width
-    useEffect(() => {
-        if (!planeRef.current) return;
+    // useEffect(() => {
+    //     if (!planeRef.current) return;
 
-        const mesh = planeRef.current;
+    //     const mesh = planeRef.current;
 
-        // compute bounding box *of the geometry*
-        const geo = mesh.geometry;
-        geo.computeBoundingBox();
+    //     // compute bounding box *of the geometry*
+    //     const geo = mesh.geometry;
+    //     geo.computeBoundingBox();
 
-        const { boundingBox } = geo;
-        const width = boundingBox.max.x - boundingBox.min.x;
-        const height = boundingBox.max.y - boundingBox.min.y;
+    //     const { boundingBox } = geo;
+    //     const width = boundingBox.max.x - boundingBox.min.x;
+    //     const height = boundingBox.max.y - boundingBox.min.y;
 
-        console.log("width:", width, "height:", height);
+    //     console.log("width:", width, "height:", height);
 
-        // size including scale/transform
-        const box = new THREE.Box3().setFromObject(planeRef.current);
-        const size = new THREE.Vector3();
-        box.getSize(size);
+    //     // size including scale/transform
+    //     const box = new THREE.Box3().setFromObject(planeRef.current);
+    //     const size = new THREE.Vector3();
+    //     box.getSize(size);
 
-        console.log("scaled width:", size.x);
-        console.log("scaled height:", size.y);
-    }, []);
+    //     console.log("scaled width:", size.x);
+    //     console.log("scaled height:", size.y);
+    // }, []);
 
     return (
         <group {...props} dispose={null}
@@ -179,14 +170,13 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
             >
                 <meshStandardMaterial
                     {...metalTextures}
-                    displacementScale={0.1} // Adjust to taste
+                    // displacementScale={0.1}
                     metalness={1}
                     roughness={0.1}
                     envMap={envMap}
-                    envMapIntensity={3}  // try 2–5 to see what fits best
+                    envMapIntensity={3}
 
                 />
-                {/* <meshStandardMaterial color="#c0c0c0" metalness={0.9} roughness={0.1} envMapIntensity={1.5} /> */}
             </mesh>
             <mesh
                 ref={planeRef}
@@ -205,5 +195,3 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         </group>
     )
 }
-
-useGLTF.preload('/custom-frame.glb')
