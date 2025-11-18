@@ -9,6 +9,8 @@ import * as THREE from 'three'
 import { GLTF } from 'three-stdlib'
 import { useCursor } from '@react-three/drei'
 import { mergeRefs } from '@/lib/utils'
+import { useStore } from '@/lib/store'
+import { useShallow } from 'zustand/react/shallow'
 
 export const DEFAULT_FRAME_SCALE = 0.02;
 // from planeRef geometry computeBoundingBox
@@ -80,8 +82,21 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
     }, [])
 
 
+    const [isListFrameHovered, setIsListFrameHovered] = useStore(useShallow((state) => [state.isListFrameHovered, state.setIsListFrameHovered]))
+
     const [hovered, set] = useState(false)
     useCursor(hovered && isFollowingCursor)
+
+    const onPointerOver = () => {
+        setIsListFrameHovered(true)
+        set(true)
+    }
+
+    const onPointerOut = () => {
+        setIsListFrameHovered(false)
+        set(false)
+    }
+
 
     if (texture) texture.flipY = false
 
@@ -185,7 +200,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
                 receiveShadow
                 geometry={nodes.Plane002.geometry}
                 material={nodes.Plane002.material}
-                onPointerOver={() => set(true)} onPointerOut={() => set(false)}
+                onPointerOver={onPointerOver} onPointerOut={onPointerOut}
             >
                 <meshStandardMaterial
                     map={texture}

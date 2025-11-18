@@ -15,6 +15,7 @@ import { animateFadeUp, MOTION_CONFIG } from "@/lib/animations";
 import { useStore } from "@/lib/store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useShallow } from "zustand/react/shallow";
 
 const projectsMainImages = PROJECTS.map((project) => project.images[0]);
 
@@ -163,15 +164,21 @@ const MainScene: React.FC = () => {
         [setTargetRotationForIndex, setTransitionValue, textures.length, updateTransitionTextures]
     );
 
+    const setIsListFrameHovered = useStore((state) => state.setIsListFrameHovered)
+    const resetListFrameHover = () => setIsListFrameHovered(false)
+
     const handleNext = useCallback(() => {
         if (!textures.length) return;
         const next = (currentIndexRef.current + 1) % textures.length;
+        const resetListFrameHover = () => setIsListFrameHovered(false)
+        resetListFrameHover()
         animateTransition(next, 1);
     }, [animateTransition, textures.length]);
 
     const handlePrev = useCallback(() => {
         if (!textures.length) return;
         const prev = (currentIndexRef.current - 1 + textures.length) % textures.length;
+        resetListFrameHover()
         animateTransition(prev, -1);
     }, [animateTransition, textures.length]);
 
@@ -182,6 +189,9 @@ const MainScene: React.FC = () => {
 
             viewedIndexRef.current = currentIndexRef.current;
             const targetScale = ((viewportWidth / FRAME_PLANE_WIDTH) * DEFAULT_FRAME_SCALE) / 2;
+
+            resetListFrameHover()
+
 
             if (skipAnimation) {
                 activeFrame.scale.set(targetScale, targetScale, targetScale);
@@ -612,7 +622,7 @@ const ProjectList = ({
     const containerDesktopRef = useRef<HTMLDivElement>(null)
     const projectContainerMobileRef = useRef<HTMLDivElement>(null)
 
-    const isLoaderLoaded = useStore((state) => state.isLoaderLoaded)
+    const [isLoaderLoaded, isListFrameHovered] = useStore(useShallow((state) => [state.isLoaderLoaded, state.isListFrameHovered]))
     const tlRef = useRef<gsap.core.Timeline | null>(null)
 
     useGSAP(() => {
@@ -691,6 +701,30 @@ const ProjectList = ({
     }, [currentIndex, isMobile]);
 
     const currentProject = PROJECTS[currentIndex]
+
+
+    const viewProjectCtaRef = useRef<HTMLButtonElement>(null)
+    const tl = useRef<gsap.core.Timeline | null>(null)
+
+    useGSAP(() => {
+        tl.current = gsap.timeline({ paused: true })
+            .fromTo(
+                viewProjectCtaRef.current,
+                { opacity: 0, y: MOTION_CONFIG.Y_OFFSET.MD },
+                { opacity: 1, y: 0, duration: MOTION_CONFIG.DURATION.CTA }
+            )
+    }, [isMobile])
+
+    useEffect(() => {
+        if (!tl.current) return
+
+        if (isListFrameHovered) {
+            tl.current.play()
+        } else {
+            tl.current.reverse()
+        }
+    }, [isListFrameHovered])
+
 
     return (
         <>
@@ -775,6 +809,11 @@ const ProjectList = ({
                     ))}
                 </ul>
             </nav>}
+            {!isMobile && <ViewProjectButton
+                ref={viewProjectCtaRef}
+                className={cn("opacity-0 z-100 absolute bottom-20 left-1/2 -translate-x-[50%] w-fit text-2xl text-white",
+                )}
+            />}
         </>
     )
 };
