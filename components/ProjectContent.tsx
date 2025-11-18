@@ -9,6 +9,8 @@ import { animateFadeUp, animateFadeUpOut, MOTION_CONFIG } from '@/lib/animations
 import { SHARED_CANVAS_PROPS } from '@/app/page'
 import { CAROUSEL_RADIUS } from './MainScene'
 import * as THREE from "three";
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 const AVAILABILITIES_OPTIONS = {
     AVAILABLE: 'AVAILABLE',
@@ -38,6 +40,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
     const timelineRef = useRef<gsap.core.Timeline | null>(null)
     const frameRef = useRef<THREE.Group>(null)
     const [isTransitioning, setIsTransitioning] = useState(false)
+    const isMobile = useIsMobile()
 
     const { nextProject, nextProjectTitle } = useMemo(() => {
         const currentProjectIndex = PROJECTS.findIndex(p => p.id === currentProject.id)
@@ -257,7 +260,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
     return (
         <div
             ref={containerRef}
-            className="fixed inset-0 z-[40] bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible"
+            className="fixed inset-0 z-40 bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible flex flex-col"
             data-overlay-container
             role="dialog"
             aria-modal="true"
@@ -269,7 +272,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                     e.stopPropagation()
                     onClose()
                 }}
-                className="fixed top-24 right-8 z-50 text-white/80 hover:text-white text-sm flex items-center space-x-2"
+                className="text-white/80 hover:text-white text-xs sm:text-sm flex items-center space-x-2 self-end px-4 sm:px-8 mb-6 sm:mb-4"
                 data-close-button
                 aria-label="Close project and return to index"
             >
@@ -286,6 +289,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                         onNextProject={onNextProject}
                         frameRef={frameRef}
                         isTransitioning={isTransitioning}
+                        isMobile={isMobile}
                     />
                 )}
             </div>
@@ -300,18 +304,18 @@ interface ProjectHeroProps {
 }
 
 const ProjectHero = ({ project, tags, metadata }: ProjectHeroProps) => (
-    <div className="grid grid-cols-6 md:grid-cols-12 gap-4 px-8 pt-16">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-4 px-4 sm:px-8">
         <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12">
-            <div className="grid grid-cols-5 md:grid-cols-10 gap-16">
-                <div className="col-span-5 md:col-span-5" data-title>
-                    <h1 id="project-title" className="text-6xl lg:text-7xl font-light text-white-400 leading-tight text-balance">
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-8 md:gap-16">
+                <div className="col-span-1 md:col-span-5" data-title>
+                    <h1 id="project-title" className="text-4xl sm:text-6xl lg:text-7xl font-light text-white-400 leading-tight text-balance">
                         {project.name}
                     </h1>
                 </div>
 
-                <div className="col-span-6 md:col-span-5 space-y-8">
+                <div className="col-span-1 md:col-span-5 space-y-8 mt-6 md:mt-0">
                     <div data-description>
-                        <p className="text-sm text-white/70">{project.description}</p>
+                        <p className="text-base md:text-sm text-white/70 leading-relaxed">{project.description}</p>
                     </div>
 
                     <div>
@@ -330,7 +334,7 @@ const ProjectHero = ({ project, tags, metadata }: ProjectHeroProps) => (
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-6 pt-8">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-6 md:pt-8">
                         {metadata.map((meta) => (
                             <div key={meta.label} data-metadata-item>
                                 <div
@@ -353,21 +357,19 @@ const ProjectHero = ({ project, tags, metadata }: ProjectHeroProps) => (
 )
 
 const ProjectImages = ({ images, projectName }: { images: string[]; projectName: string }) => (
-    <section className="grid grid-cols-12 gap-4 px-8 mt-16 mb-32" aria-label={`${projectName} images`}>
-        <div className="col-start-1 col-end-13">
-            <div className="mb-8">
-                <div className="overflow-hidden">
-                    <img
-                        data-image-item
-                        src={images[0]}
-                        alt={`${projectName} - Main artwork view`}
-                        className="w-full h-full object-cover"
-                    />
-                </div>
+    <section className="grid grid-cols-12 gap-4 sm:gap-6 mt-12 sm:mt-16 mb-20 sm:mb-32 px-4 sm:px-8" aria-label={`${projectName} images`}>
+        <div className="col-span-12">
+            <div className="mb-8 overflow-hidden">
+                <img
+                    data-image-item
+                    src={images[0]}
+                    alt={`${projectName} - Main artwork view`}
+                    className="w-full h-full object-cover"
+                />
             </div>
         </div>
 
-        <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12 grid grid-cols-2 gap-8">
+        <div className="col-span-12 sm:col-span-10 sm:col-start-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
             {images.slice(-2).map((src, index) => (
                 <div key={src} className="aspect-[3/4] overflow-hidden">
                     <img
@@ -387,6 +389,7 @@ interface NextProjectSectionProps {
     onNextProject: () => void;
     frameRef: React.RefObject<THREE.Group>;
     isTransitioning: boolean;
+    isMobile: boolean;
 }
 
 const NextProjectSection = ({
@@ -395,9 +398,13 @@ const NextProjectSection = ({
     onNextProject,
     frameRef,
     isTransitioning,
+    isMobile,
 }: NextProjectSectionProps) => (
     <section
-        className="relative h-screen flex items-center justify-center bg-black"
+        className={cn(
+            "relative flex items-center justify-center bg-black text-center px-4",
+            "min-h-screen"
+        )}
         aria-label={`Next project: ${title}`}
         data-next-project-container
     >
@@ -417,14 +424,14 @@ const NextProjectSection = ({
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
             <div
                 data-next-project-title
-                className="absolute text-white text-xl font-light z-[2] pointer-events-none"
+                className="absolute text-white text-sm sm:text-xl font-light z-[2] pointer-events-none"
                 style={{ top: 16 }}
             >
                 NEXT PROJECT
             </div>
             <h2
                 data-next-project-name-color
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[3rem] sm:text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
                 style={{
                     color: 'white',
                     WebkitTextStroke: '1px white'
@@ -434,7 +441,7 @@ const NextProjectSection = ({
             </h2>
             <h2
                 data-next-project-name-stroke
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[3rem] sm:text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
                 style={{
                     color: 'transparent',
                     WebkitTextStroke: '1px white',
@@ -445,7 +452,7 @@ const NextProjectSection = ({
             </h2>
         </div>
 
-        <div className="w-full h-screen z-[1]">
+        <div className={cn("w-full z-[1]", "h-screen")}>
             <Canvas {...SHARED_CANVAS_PROPS}>
                 <ambientLight intensity={0.2} />
                 <directionalLight position={[5, 5, 5]} intensity={1} castShadow />

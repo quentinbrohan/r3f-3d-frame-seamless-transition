@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useTexture, CubeCamera, Html } from "@react-three/drei";
@@ -11,13 +13,16 @@ import { ShaderTransitionMaterial } from "./webgl/shaders/transitionMaterial";
 import { useGSAP } from "@gsap/react";
 import { animateFadeUp, MOTION_CONFIG } from "@/lib/animations";
 import { useStore } from "@/lib/store";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const projectsMainImages = PROJECTS.map((p) => p.images[0]);
 
 export const CAROUSEL_RADIUS = 5;
 const CAROUSEL_INITIAL_ROTATION_OFFSET = Math.PI;
 const NAVIGATION_BUTTON_BASE =
-    "absolute top-1/2 -translate-y-1/2 z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition";
+    "z-30 bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition";
+const NAVIGATION_BUTTON_DESKTOP_POSITION = "absolute top-1/2 -translate-y-1/2";
 
 type FrameRefs = React.RefObject<Array<THREE.Group | null>>;
 
@@ -43,6 +48,8 @@ const useProjectTextures = (imageUrls: string[]) => {
 const MainScene: React.FC = () => {
     const textures = useProjectTextures(projectsMainImages);
     const viewportWidth = useThree((state) => state.size.width);
+    const gl = useThree((state) => state.gl);
+    const isMobile = useIsMobile();
 
     const frameRefs = useRef<Array<THREE.Group | null>>([]);
     const viewedIndexRef = useRef(0);
@@ -52,6 +59,11 @@ const MainScene: React.FC = () => {
     const transitionRef = useRef(0);
     const targetRotation = useRef(CAROUSEL_INITIAL_ROTATION_OFFSET);
     const currentIndexRef = useRef(0);
+    const swipeStateRef = useRef({
+        startX: 0,
+        startY: 0,
+        isSwiping: false,
+    });
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentProject, setCurrentProject] = useState<Project>(PROJECTS[0]);
@@ -59,6 +71,10 @@ const MainScene: React.FC = () => {
 
     const numFrames = useMemo(() => projectsMainImages.length, []);
     const step = useMemo(() => (2 * Math.PI) / numFrames, [numFrames]);
+    const carouselRadius = useMemo(
+        () => CAROUSEL_RADIUS,
+        [isMobile]
+    );
 
     useEffect(() => {
         frameRefs.current = frameRefs.current.slice(0, PROJECTS.length);
@@ -252,6 +268,55 @@ const MainScene: React.FC = () => {
         updateTransitionTextures(initial, next, 0);
     }, [textures.length, updateTransitionTextures]);
 
+    useEffect(() => {
+        if (!isMobile || showContent) return;
+        const element = gl?.domElement;
+        if (!element) return;
+
+        const swipeState = swipeStateRef.current;
+
+        const handleTouchStart = (event: TouchEvent) => {
+            if (event.touches.length !== 1) return;
+            swipeState.startX = event.touches[0].clientX;
+            swipeState.startY = event.touches[0].clientY;
+            swipeState.isSwiping = true;
+        };
+
+        const handleTouchMove = (event: TouchEvent) => {
+            if (!swipeState.isSwiping || event.touches.length !== 1) return;
+            const deltaX = event.touches[0].clientX - swipeState.startX;
+            const deltaY = event.touches[0].clientY - swipeState.startY;
+
+            if (Math.abs(deltaY) > Math.abs(deltaX)) {
+                swipeState.isSwiping = false;
+                return;
+            }
+
+            if (Math.abs(deltaX) > 50) {
+                if (deltaX > 0) {
+                    handlePrev();
+                } else {
+                    handleNext();
+                }
+                swipeState.isSwiping = false;
+            }
+        };
+
+        const handleTouchEnd = () => {
+            swipeState.isSwiping = false;
+        };
+
+        element.addEventListener("touchstart", handleTouchStart, { passive: true });
+        element.addEventListener("touchmove", handleTouchMove);
+        element.addEventListener("touchend", handleTouchEnd);
+
+        return () => {
+            element.removeEventListener("touchstart", handleTouchStart);
+            element.removeEventListener("touchmove", handleTouchMove);
+            element.removeEventListener("touchend", handleTouchEnd);
+        };
+    }, [gl, handleNext, handlePrev, isMobile, showContent]);
+
     useFrame(() => {
         if (!groupRef.current) return;
         const rot = groupRef.current.rotation.y;
@@ -280,6 +345,9 @@ const MainScene: React.FC = () => {
                 frameRefs={frameRefs}
                 groupRef={groupRef}
                 showContent={showContent}
+                radius={carouselRadius}
+                isMobile={isMobile}
+                shouldFollowCursor={!showContent}
                 onFrameClick={handleStartMovement}
             />
 
@@ -294,6 +362,7 @@ const MainScene: React.FC = () => {
                 onSelectProject={handleSelectProject}
                 onNextFromOverlay={handleNextFromOverlay}
                 showContent={showContent}
+                isMobile={isMobile}
             />
         </>
     );
@@ -326,6 +395,9 @@ interface FramesCarouselProps {
     showContent: boolean;
     frameRefs: FrameRefs;
     groupRef: React.RefObject<THREE.Group>;
+    radius: number;
+    isMobile: boolean;
+    shouldFollowCursor: boolean;
     onFrameClick: () => void;
 }
 
@@ -335,15 +407,24 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
     showContent,
     frameRefs,
     groupRef,
+    radius,
+    isMobile,
+    shouldFollowCursor,
     onFrameClick,
 }) => (
-    <CubeCamera frames={Infinity} resolution={512} near={0.1} far={1000} position={[0, 0, 2]}>
+    <CubeCamera
+        frames={Infinity}
+        resolution={isMobile ? 256 : 512}
+        near={0.1}
+        far={1000}
+        position={[0, 0, 2]}
+    >
         {(texture) => (
             <group ref={groupRef}>
                 {images.map((img, i) => {
                     const angle = -(i / numFrames) * Math.PI * 2;
-                    const x = Math.sin(angle) * CAROUSEL_RADIUS;
-                    const z = Math.cos(angle) * CAROUSEL_RADIUS;
+                    const x = Math.sin(angle) * radius;
+                    const z = Math.cos(angle) * radius;
                     const rotationY = angle + Math.PI;
 
                     return (
@@ -354,7 +435,7 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
                             rotation={[0, rotationY, 0]}
                             envMap={texture}
                             onClick={() => onFrameClick()}
-                            isFollowingCursor={!showContent}
+                            isFollowingCursor={shouldFollowCursor}
                             ref={(el) => {
                                 frameRefs.current[i] = el;
                             }}
@@ -385,6 +466,7 @@ interface InterfaceOverlayProps {
     onSelectProject: (index: number) => void;
     onClose: () => void;
     onNextFromOverlay: () => void;
+    isMobile: boolean;
 }
 
 // TODO: move to dom
@@ -397,6 +479,7 @@ const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
     onSelectProject,
     onClose,
     onNextFromOverlay,
+    isMobile,
 }) => {
     if (!currentProject) return null;
 
@@ -412,8 +495,27 @@ const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
             }}
         >
             <>
-                <NavigationButton direction="prev" onClick={onPrev} />
-                <NavigationButton direction="next" onClick={onNext} />
+                {isMobile ? (
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4">
+                        <NavigationButton
+                            direction="prev"
+                            onClick={onPrev}
+                            isInline
+                            className="backdrop-blur-md border border-white/20 bg-white/10"
+                        />
+                        <NavigationButton
+                            direction="next"
+                            onClick={onNext}
+                            isInline
+                            className="backdrop-blur-md border border-white/20 bg-white/10"
+                        />
+                    </div>
+                ) : (
+                    <>
+                        <NavigationButton direction="prev" onClick={onPrev} />
+                        <NavigationButton direction="next" onClick={onNext} />
+                    </>
+                )}
 
                 <ProjectContent
                     isVisible={showContent}
@@ -422,7 +524,11 @@ const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
                     onNext={onNextFromOverlay}
                 />
 
-                <ProjectList currentIndex={currentIndex} onSelectProject={onSelectProject} />
+                <ProjectList
+                    currentIndex={currentIndex}
+                    onSelectProject={onSelectProject}
+                    isMobile={isMobile}
+                />
             </>
         </Html>
     );
@@ -431,13 +537,23 @@ const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
 const NavigationButton = ({
     direction,
     onClick,
+    isInline = false,
+    className,
 }: {
     direction: "prev" | "next";
     onClick: () => void;
+    isInline?: boolean;
+    className?: string;
 }) => (
     <button
         onClick={onClick}
-        className={`${NAVIGATION_BUTTON_BASE} ${direction === "prev" ? "left-4" : "right-4"}`}
+        className={cn(
+            NAVIGATION_BUTTON_BASE,
+            !isInline && NAVIGATION_BUTTON_DESKTOP_POSITION,
+            !isInline && (direction === "prev" ? "left-4" : "right-4"),
+            isInline && "relative",
+            className
+        )}
         aria-label={direction === "prev" ? "Previous project" : "Next project"}
     >
         <svg
@@ -461,16 +577,18 @@ const NavigationButton = ({
 const ProjectList = ({
     currentIndex,
     onSelectProject,
+    isMobile,
 }: {
     currentIndex: number;
     onSelectProject: (index: number) => void;
+    isMobile: boolean;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const isLoaderLoaded = useStore((state) => state.isLoaderLoaded)
     const tlRef = useRef<gsap.core.Timeline | null>(null)
 
     useGSAP(() => {
-        if (!containerRef.current || !isLoaderLoaded) return;
+        if (!containerRef.current || !isLoaderLoaded || isMobile) return;
 
         const container = gsap.utils.selector(containerRef)
         const itemEls = container('li')
@@ -487,15 +605,41 @@ const ProjectList = ({
         tlRef.current = tl;
     }, {
         scope: containerRef,
-        dependencies: [isLoaderLoaded]
+        dependencies: [isLoaderLoaded, isMobile]
     })
 
     useEffect(() => {
-        if (isLoaderLoaded && tlRef.current)
+        if (isLoaderLoaded && tlRef.current && !isMobile)
             tlRef.current.play()
-    }, [isLoaderLoaded])
+    }, [isLoaderLoaded, isMobile])
 
-    return ((
+    if (isMobile) {
+        return (
+            <nav className="w-full px-4 pt-24 pb-6" aria-label="Project list">
+                <ul className="flex gap-3 overflow-x-auto snap-x snap-mandatory text-white pb-2" role="list">
+                    {PROJECTS.map((project, i) => (
+                        <li key={project.name} className="snap-center">
+                            <button
+                                className={cn(
+                                    "px-4 py-2 rounded-full border text-left whitespace-nowrap text-sm font-light transition",
+                                    currentIndex === i
+                                        ? "bg-white/20 border-white/60 text-white"
+                                        : "bg-white/5 border-white/20 text-white/70"
+                                )}
+                                onClick={() => onSelectProject(i)}
+                                aria-label={`View ${project.name} project`}
+                                aria-current={currentIndex === i ? "page" : undefined}
+                            >
+                                {project.name}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </nav>
+        )
+    }
+
+    return (
         <nav ref={containerRef} className="grid grid-cols-12 px-8 w-full z-100 pt-32" aria-label="Project list">
             <ul className="col-start-9 col-end-13 text-white" role="list">
                 {PROJECTS.map((project, i) => (
@@ -513,5 +657,5 @@ const ProjectList = ({
                 ))}
             </ul>
         </nav>
-    ))
+    )
 };

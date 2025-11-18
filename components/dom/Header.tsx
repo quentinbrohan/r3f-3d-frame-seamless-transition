@@ -64,7 +64,7 @@ const Header = () => {
     return (
         <nav
             ref={headerRef}
-            className="fixed top-0 left-0 right-0 z-50 px-8 py-6 grid grid-cols-12 w-full items-center text-white"
+            className="fixed top-0 left-0 right-0 z-50 px-8 mt-6 sm:px-[4] sm:mt-4 grid grid-cols-12 w-full items-center text-white"
             aria-label="Main navigation"
         >
             {/* Left side */}
