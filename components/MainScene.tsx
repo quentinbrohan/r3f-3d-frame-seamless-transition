@@ -663,27 +663,27 @@ const ProjectList = ({
 
     const currentProject = PROJECTS[currentIndex]
 
-    const viewProjectCtaRef = useRef<HTMLButtonElement>(null)
-    const tl = useRef<gsap.core.Timeline | null>(null)
+    // const viewProjectCtaRef = useRef<HTMLButtonElement>(null)
+    // const tl = useRef<gsap.core.Timeline | null>(null)
 
-    useGSAP(() => {
-        tl.current = gsap.timeline({ paused: true })
-            .fromTo(
-                viewProjectCtaRef.current,
-                { opacity: 0, y: MOTION_CONFIG.Y_OFFSET.MD },
-                { opacity: 1, y: 0, duration: MOTION_CONFIG.DURATION.CTA }
-            )
-    }, [isMobile])
+    // useGSAP(() => {
+    //     tl.current = gsap.timeline({ paused: true })
+    //         .fromTo(
+    //             viewProjectCtaRef.current,
+    //             { opacity: 0, y: MOTION_CONFIG.Y_OFFSET.MD },
+    //             { opacity: 1, y: 0, duration: MOTION_CONFIG.DURATION.CTA }
+    //         )
+    // }, [isMobile])
 
-    useEffect(() => {
-        if (!tl.current) return
+    // useEffect(() => {
+    //     if (!tl.current) return
 
-        if (isListFrameHovered) {
-            tl.current.play()
-        } else {
-            tl.current.reverse()
-        }
-    }, [isListFrameHovered])
+    //     if (isListFrameHovered) {
+    //         tl.current.play()
+    //     } else {
+    //         tl.current.reverse()
+    //     }
+    // }, [isListFrameHovered])
 
 
     return (
@@ -769,11 +769,11 @@ const ProjectList = ({
                     ))}
                 </ul>
             </nav>}
-            {!isMobile && <ViewProjectButton
+            {/* {!isMobile && <ViewProjectButton
                 ref={viewProjectCtaRef}
                 className={cn("opacity-0 z-100 absolute bottom-20 left-1/2 -translate-x-[50%] w-fit text-2xl text-white",
                 )}
-            />}
+            />} */}
         </>
     )
 };
