@@ -387,6 +387,7 @@ interface InterfaceOverlayProps {
     onNextFromOverlay: () => void;
 }
 
+// TODO: move to dom
 const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
     currentIndex,
     currentProject,

@@ -1,8 +1,15 @@
 export const PROJECT_CATEGORY = {
-  PHYSICAL_ART: "Physical Art",
+  PHYSICAL_ART: "PHYSICAL_ART",
 } as const;
 
 export type ProjectCategories = keyof typeof PROJECT_CATEGORY;
+
+/** in cm */
+export interface Dimensions {
+  height: number;
+  width: number;
+  depth?: number;
+}
 
 export interface Project {
   id: string;
@@ -11,15 +18,9 @@ export interface Project {
   description: string;
   category: ProjectCategories;
   theme: string;
-  //   year: string;
   startDate: string;
   endDate?: string;
-  dimensions: {
-    height: number;
-    width: number;
-    depth?: number;
-  };
-  // techniques
+  dimensions: Dimensions;
   materials: string[];
   isPrintAvailable?: boolean;
   isOriginalAvailable?: boolean;

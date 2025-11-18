@@ -4,7 +4,7 @@ import gsap from 'gsap'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
 import { CustomFrame, DEFAULT_FRAME_SCALE } from './webgl/CustomFrame'
-import { Project, PROJECT_CATEGORY, PROJECTS } from '@/app/data'
+import { Project, ProjectCategories, PROJECTS } from '@/app/data'
 import { animateFadeUp, animateFadeUpOut, MOTION_CONFIG } from '@/lib/animations'
 import { SHARED_CANVAS_PROPS } from '@/app/page'
 import { CAROUSEL_RADIUS } from './MainScene'
@@ -16,11 +16,15 @@ const AVAILABILITIES_OPTIONS = {
     SOLD: 'SOLD'
 } as const;
 
-const AVAILABILITIES_VALUE = {
+const AVAILABILITIES_VALUE: Record<keyof typeof AVAILABILITIES_OPTIONS, string> = {
     AVAILABLE: 'Available',
     NOT_AVAILABLE: 'Not available',
     SOLD: 'Sold out'
 } as const;
+
+export const PROJECT_CATEGORY_LABEL: Record<ProjectCategories, string> = {
+    PHYSICAL_ART: 'Physical Art'
+}
 
 interface ProjectContentProps {
     isVisible: boolean
@@ -58,7 +62,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
 
     const metadata = useMemo(() => ([
         { label: 'THEME', value: currentProject.theme },
-        { label: 'CATEGORY', value: PROJECT_CATEGORY[currentProject.category] },
+        { label: 'CATEGORY', value: PROJECT_CATEGORY_LABEL[currentProject.category] },
         { label: 'SIZE', value: `${currentProject.dimensions.width}x${currentProject.dimensions.height} cm` },
         { label: 'YEAR', value: currentProject.endDate ? new Date(currentProject.endDate).getFullYear() : '' },
     ]), [currentProject.category, currentProject.dimensions.height, currentProject.dimensions.width, currentProject.endDate, currentProject.theme])
@@ -66,20 +70,32 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
     const onNextProject = useCallback(() => {
         if (!frameRef.current || !containerRef.current) return;
 
-        setIsTransitioning(true)
-
-        const tl = gsap.timeline({ id: 'project-content' });
-        const targetScale = 1;
-
         const container = gsap.utils.selector(containerRef)
+        const nextProjectContainerEl = container('[data-next-project-container]')
         const nextProjectTitleEl = container('[data-next-project-title]')
         const nextProjectNameColorEl = container('[data-next-project-name-color]')
         const nextProjectNameStrokeEl = container('[data-next-project-name-stroke]')
 
+        const tl = gsap.timeline({ id: 'project-content' });
+        const targetScale = 1;
+
+        tl.add(
+            gsap.to(containerRef.current, {
+                duration: MOTION_CONFIG.DURATION.CTA,
+                scrollTo: {
+                    y: nextProjectContainerEl[0],
+                    offsetY: 0
+                },
+                ease: MOTION_CONFIG.EASING.OUT,
+                onStart: () => {
+                    setIsTransitioning(true)
+                }
+            })
+        )
         tl.add(
             animateFadeUpOut(nextProjectTitleEl, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
-            })
+            }),
         )
         tl.add(
             animateFadeUpOut(nextProjectNameColorEl, {
@@ -310,7 +326,7 @@ const ProjectHero = ({ project, tags, metadata }: ProjectHeroProps) => (
         <div className="col-start-1 col-end-13 md:col-start-2 md:col-end-12">
             <div className="grid grid-cols-5 md:grid-cols-10 gap-16">
                 <div className="col-span-5 md:col-span-5" data-title>
-                    <h1 id="project-title" className="text-6xl lg:text-7xl font-light text-white-400 leading-tight">
+                    <h1 id="project-title" className="text-6xl lg:text-7xl font-light text-white-400 leading-tight text-balance">
                         {project.name}
                     </h1>
                 </div>
@@ -338,11 +354,15 @@ const ProjectHero = ({ project, tags, metadata }: ProjectHeroProps) => (
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-6 pt-8">
                         {metadata.map((meta) => (
-                            <div key={meta.label}>
-                                <div data-metadata-item={meta.label} className="text-xs text-white-400 mb-2 uppercase tracking-wider">
+                            <div key={meta.label} data-metadata-item>
+                                <div
+                                    // data-metadata-item={meta.label}
+                                    className="text-xs text-white-400 mb-2 uppercase tracking-wider">
                                     {meta.label}
                                 </div>
-                                <div data-metadata-item={String(meta.value ?? '')} className="text-sm text-white">
+                                <div
+                                    // data-metadata-item={String(meta.value ?? '')}
+                                    className="text-sm text-white">
                                     {meta.value}
                                 </div>
                             </div>
@@ -413,6 +433,7 @@ const NextProjectSection = ({
     <section
         className="relative h-screen flex items-center justify-center bg-black"
         aria-label={`Next project: ${title}`}
+        data-next-project-container
     >
         <button
             onClick={onNextProject}
@@ -422,7 +443,7 @@ const NextProjectSection = ({
                     onNextProject()
                 }
             }}
-            className="absolute inset-0 w-full h-full z-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+            className="absolute inset-0 w-full h-full z-10 cursor-pointer"
             aria-label={`View next project: ${title}`}
         >
             <span className="sr-only">View next project: {title}</span>
