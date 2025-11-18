@@ -34,7 +34,7 @@ export default function Component() {
 
   return (
     <>
-      <div className="w-full h-screen bg-black relative">
+      <div className="w-full h-[100svh] bg-black relative">
         <Canvas
           {...SHARED_CANVAS_PROPS}
           className="relative z-10"

@@ -272,7 +272,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                     e.stopPropagation()
                     onClose()
                 }}
-                className="text-white/80 hover:text-white text-xs sm:text-sm flex items-center space-x-2 self-end px-4 sm:px-8 mb-6 sm:mb-4"
+                className="text-white/80 hover:text-white text-xs uppercase flex items-center gap-2 space-x-2 self-end px-4 sm:px-8 mb-6 sm:mb-4"
                 data-close-button
                 aria-label="Close project and return to index"
             >

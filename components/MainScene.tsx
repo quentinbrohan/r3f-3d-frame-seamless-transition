@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { ButtonHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useTexture, CubeCamera, Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -16,7 +16,7 @@ import { useStore } from "@/lib/store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-const projectsMainImages = PROJECTS.map((p) => p.images[0]);
+const projectsMainImages = PROJECTS.map((project) => project.images[0]);
 
 export const CAROUSEL_RADIUS = 5;
 const CAROUSEL_INITIAL_ROTATION_OFFSET = Math.PI;
@@ -361,6 +361,7 @@ const MainScene: React.FC = () => {
                 onPrev={handlePrev}
                 onSelectProject={handleSelectProject}
                 onNextFromOverlay={handleNextFromOverlay}
+                onProjectClick={handleStartMovement}
                 showContent={showContent}
                 isMobile={isMobile}
             />
@@ -466,6 +467,7 @@ interface InterfaceOverlayProps {
     onSelectProject: (index: number) => void;
     onClose: () => void;
     onNextFromOverlay: () => void;
+    onProjectClick: () => void;
     isMobile: boolean;
 }
 
@@ -479,6 +481,7 @@ const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
     onSelectProject,
     onClose,
     onNextFromOverlay,
+    onProjectClick,
     isMobile,
 }) => {
     if (!currentProject) return null;
@@ -495,27 +498,29 @@ const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
             }}
         >
             <>
-                {isMobile ? (
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4">
-                        <NavigationButton
-                            direction="prev"
-                            onClick={onPrev}
-                            isInline
-                            className="backdrop-blur-md border border-white/20 bg-white/10"
-                        />
-                        <NavigationButton
-                            direction="next"
-                            onClick={onNext}
-                            isInline
-                            className="backdrop-blur-md border border-white/20 bg-white/10"
-                        />
-                    </div>
-                ) : (
-                    <>
-                        <NavigationButton direction="prev" onClick={onPrev} />
-                        <NavigationButton direction="next" onClick={onNext} />
-                    </>
-                )}
+                {
+                    // isMobile ? (
+                    //     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4">
+                    //         <NavigationButton
+                    //             direction="prev"
+                    //             onClick={onPrev}
+                    //             isInline
+                    //             className="backdrop-blur-md border border-white/20 bg-white/10"
+                    //         />
+                    //         <NavigationButton
+                    //             direction="next"
+                    //             onClick={onNext}
+                    //             isInline
+                    //             className="backdrop-blur-md border border-white/20 bg-white/10"
+                    //         />
+                    //     </div>
+                    // ) :
+                    !isMobile && (
+                        <>
+                            <NavigationButton direction="prev" onClick={onPrev} />
+                            <NavigationButton direction="next" onClick={onNext} />
+                        </>
+                    )}
 
                 <ProjectContent
                     isVisible={showContent}
@@ -528,6 +533,9 @@ const InterfaceOverlay: React.FC<InterfaceOverlayProps> = ({
                     currentIndex={currentIndex}
                     onSelectProject={onSelectProject}
                     isMobile={isMobile}
+                    onPrev={onPrev}
+                    onNext={onNext}
+                    onOpenProject={onProjectClick}
                 />
             </>
         </Html>
@@ -574,58 +582,189 @@ const NavigationButton = ({
     </button>
 );
 
+
+const ViewProjectButton: React.FC<Partial<ButtonHTMLAttributes<any>>> = ({ className, ...props }) => {
+    return (
+        <button {...props} data-view-project-cta className={cn("p-4 px-4 w-full border border-white/20 bg-black/60 overflow-hidden", className)}>
+            <span data-view-project-cta-text className={cn("flex justify-between uppercase text-xs gap-2 w-full")} >
+                VIEW PROJECT
+                <span aria-hidden="true">→</span>
+            </span>
+        </button>
+    )
+}
+
 const ProjectList = ({
     currentIndex,
     onSelectProject,
+    onNext,
+    onPrev,
+    onOpenProject,
     isMobile,
 }: {
     currentIndex: number;
     onSelectProject: (index: number) => void;
+    onPrev: () => void;
+    onNext: () => void;
+    onOpenProject: () => void;
     isMobile: boolean;
 }) => {
-    const containerRef = useRef<HTMLDivElement>(null)
+    const containerDesktopRef = useRef<HTMLDivElement>(null)
+    const projectContainerMobileRef = useRef<HTMLDivElement>(null)
+
     const isLoaderLoaded = useStore((state) => state.isLoaderLoaded)
     const tlRef = useRef<gsap.core.Timeline | null>(null)
 
     useGSAP(() => {
-        if (!containerRef.current || !isLoaderLoaded || isMobile) return;
+        if (isMobile && !projectContainerMobileRef.current) return;
+        if (!isMobile && !containerDesktopRef.current) return;
 
-        const container = gsap.utils.selector(containerRef)
-        const itemEls = container('li')
+        let itemEls: HTMLElement[] = [];
+        let currentProjectNameEl: HTMLElement[] = [];
+        let viewProjectEl: HTMLElement[] = [];
+
+        if (isMobile) {
+            const containerMobile = gsap.utils.selector(projectContainerMobileRef)
+
+            currentProjectNameEl = containerMobile('[data-current-project-name]')
+            viewProjectEl = containerMobile('[data-view-project-cta]')
+            itemEls = containerMobile('li')
+        } else {
+            const container = gsap.utils.selector(containerDesktopRef)
+            itemEls = container('li')
+            currentProjectNameEl = container('[data-current-project-name]')
+            viewProjectEl = container('[data-view-project-cta]')
+        }
+
+        if (itemEls.length === 0) return;
+
 
         const tl = gsap.timeline({ id: 'project-list', paused: true });
 
+        if (isMobile) {
+            tl.add(animateFadeUp(currentProjectNameEl, {
+                y: MOTION_CONFIG.Y_OFFSET.MD,
+            }), `<+=${MOTION_CONFIG.STAGGER_DELAY.LG}`)
+            tl.add(animateFadeUp(viewProjectEl, {
+                y: MOTION_CONFIG.Y_OFFSET.MD,
+            }), `<+=${MOTION_CONFIG.STAGGER_DELAY.MD}`)
+        }
         tl.add(
             animateFadeUp(itemEls, {
                 y: MOTION_CONFIG.Y_OFFSET.MD,
-                stagger: MOTION_CONFIG.STAGGER.MD
+                stagger: MOTION_CONFIG.STAGGER.MD,
             }), `<+=${MOTION_CONFIG.STAGGER_DELAY.LG}`
         )
 
         tlRef.current = tl;
     }, {
-        scope: containerRef,
         dependencies: [isLoaderLoaded, isMobile]
     })
 
     useEffect(() => {
-        if (isLoaderLoaded && tlRef.current && !isMobile)
+        if (isLoaderLoaded && tlRef.current)
             tlRef.current.play()
     }, [isLoaderLoaded, isMobile])
 
-    if (isMobile) {
-        return (
-            <nav className="w-full px-4 pt-24 pb-6" aria-label="Project list">
-                <ul className="flex gap-3 overflow-x-auto snap-x snap-mandatory text-white pb-2" role="list">
+    useGSAP(() => {
+        if (!isMobile || !projectContainerMobileRef.current) return;
+
+        const container = gsap.utils.selector(projectContainerMobileRef);
+        const currentProjectNameEl = container('[data-current-project-name]');
+        const viewProjectEl = container('[data-view-project-cta-text]');
+
+        if (!currentProjectNameEl.length || !viewProjectEl.length) return;
+
+        const tl = gsap.timeline();
+
+        tl.add(animateFadeUp(currentProjectNameEl, {
+            y: MOTION_CONFIG.Y_OFFSET.MD,
+            duration: MOTION_CONFIG.DURATION.CTA,
+        }))
+        tl.add(animateFadeUp(viewProjectEl, {
+            y: MOTION_CONFIG.Y_OFFSET.MD,
+            duration: MOTION_CONFIG.DURATION.CTA,
+        }),
+            `<${MOTION_CONFIG.STAGGER_DELAY.MD}`
+        );
+
+    }, [currentIndex, isMobile]);
+
+    const currentProject = PROJECTS[currentIndex]
+
+    return (
+        <>
+            <>
+                {isMobile && <div
+                    ref={projectContainerMobileRef}
+                    className={cn(
+                        "fixed w-full px-4 mb-2 bottom-6 text-left text-2xl leading-none",
+                        "text-white",
+                    )}
+                    aria-label={`Open ${currentProject.name} project`}
+                >
+                    <p className="mb-4 text-left text-2xl leading-none" data-current-project-name>
+                        {currentProject.name}
+                    </p>
+                    <ViewProjectButton onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenProject()
+                    }}
+                        className="mb-4"
+                    />
+                    <nav
+                        className={cn("w-full")}
+                        aria-label="Project list">
+                        <ul className="flex gap-3 items-center text-white" role="list">
+                            {/* <li className="flex-2">
+                            <NavigationButton
+                                direction="prev"
+                                onClick={onPrev}
+                                isInline
+                                className="backdrop-blur-md border border-white/20 bg-white/10"
+                            />
+                        </li> */}
+                            {PROJECTS.map((project, i) => (
+                                <li key={project.name} className="flex-1">
+                                    <button
+                                        className={cn(
+                                            "w-full min-h-10 flex items-center",
+                                        )}
+                                        onClick={() => onSelectProject(i)}
+                                        aria-label={`View ${project.name} project`}
+                                        aria-current={currentIndex === i ? "page" : undefined}
+                                    >
+                                        <span className={cn(
+                                            "w-full h-4 rounded-sm border transition",
+                                            currentIndex === i
+                                                ? "bg-black/100 border-white/60"
+                                                : "bg-black/25 border-white/20"
+                                        )}></span>
+                                    </button>
+                                </li>
+                            ))}
+                            {/* <li className="flex-2">
+                            <NavigationButton
+                                direction="next"
+                                onClick={onNext}
+                                isInline
+                                className="backdrop-blur-md border border-white/20 bg-white/10"
+                            />
+                        </li> */}
+                        </ul>
+                    </nav>
+                </div>}
+            </>
+
+            {!isMobile && <nav ref={containerDesktopRef} className={cn("grid grid-cols-12 px-8 w-full z-100 pt-32",
+            )}
+                aria-label="Project list">
+                <ul className="col-start-9 col-end-13 text-white" role="list">
                     {PROJECTS.map((project, i) => (
-                        <li key={project.name} className="snap-center">
+                        <li key={project.name} className="mb-0.5 last:mb-0">
                             <button
-                                className={cn(
-                                    "px-4 py-2 rounded-full border text-left whitespace-nowrap text-sm font-light transition",
-                                    currentIndex === i
-                                        ? "bg-white/20 border-white/60 text-white"
-                                        : "bg-white/5 border-white/20 text-white/70"
-                                )}
+                                className={`text-2xl text-left ${currentIndex === i ? "opacity-100" : "opacity-60"
+                                    } transition hover:opacity-100 leading-none`}
                                 onClick={() => onSelectProject(i)}
                                 aria-label={`View ${project.name} project`}
                                 aria-current={currentIndex === i ? "page" : undefined}
@@ -635,27 +774,7 @@ const ProjectList = ({
                         </li>
                     ))}
                 </ul>
-            </nav>
-        )
-    }
-
-    return (
-        <nav ref={containerRef} className="grid grid-cols-12 px-8 w-full z-100 pt-32" aria-label="Project list">
-            <ul className="col-start-9 col-end-13 text-white" role="list">
-                {PROJECTS.map((project, i) => (
-                    <li key={project.name} className="mb-0.5 last:mb-0">
-                        <button
-                            className={`text-2xl text-left ${currentIndex === i ? "opacity-100" : "opacity-60"
-                                } transition hover:opacity-100 leading-none`}
-                            onClick={() => onSelectProject(i)}
-                            aria-label={`View ${project.name} project`}
-                            aria-current={currentIndex === i ? "page" : undefined}
-                        >
-                            {project.name}
-                        </button>
-                    </li>
-                ))}
-            </ul>
-        </nav>
+            </nav>}
+        </>
     )
 };
