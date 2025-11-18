@@ -170,7 +170,6 @@ const MainScene: React.FC = () => {
     const handleNext = useCallback(() => {
         if (!textures.length) return;
         const next = (currentIndexRef.current + 1) % textures.length;
-        const resetListFrameHover = () => setIsListFrameHovered(false)
         resetListFrameHover()
         animateTransition(next, 1);
     }, [animateTransition, textures.length]);
@@ -701,7 +700,6 @@ const ProjectList = ({
     }, [currentIndex, isMobile]);
 
     const currentProject = PROJECTS[currentIndex]
-
 
     const viewProjectCtaRef = useRef<HTMLButtonElement>(null)
     const tl = useRef<gsap.core.Timeline | null>(null)
