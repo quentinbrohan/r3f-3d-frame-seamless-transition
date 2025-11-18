@@ -39,6 +39,7 @@ interface CustomFrameProps {
     isFloating?: boolean;
     isFollowingCursor?: boolean;
     index: number;
+    isListPage?: boolean;
 }
 
 export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameProps) {
@@ -49,7 +50,8 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         isFloating = false,
         isFollowingCursor = true,
         ref,
-        index
+        index,
+        isListPage = false,
     } = props
     const groupRef = useRef<THREE.Group | null>(null)
     const planeRef = useRef<THREE.Mesh | null>(null)
@@ -88,12 +90,14 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
     useCursor(hovered && isFollowingCursor)
 
     const onPointerOver = () => {
-        setIsListFrameHovered(true)
+        if (isListPage)
+            setIsListFrameHovered(true)
         set(true)
     }
 
     const onPointerOut = () => {
-        setIsListFrameHovered(false)
+        if (isListFrameHovered)
+            setIsListFrameHovered(false)
         set(false)
     }
 
@@ -200,7 +204,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
                 receiveShadow
                 geometry={nodes.Plane002.geometry}
                 material={nodes.Plane002.material}
-                onPointerOver={onPointerOver} onPointerOut={onPointerOut}
+                onPointerOver={() => onPointerOver()} onPointerOut={() => onPointerOut()}
             >
                 <meshStandardMaterial
                     map={texture}

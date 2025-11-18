@@ -424,7 +424,7 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
 }) => (
     <CubeCamera
         frames={Infinity}
-        resolution={isMobile ? 256 : 512}
+        resolution={isMobile ? 64 : 128}
         near={0.1}
         far={1000}
         position={[0, 0, 2]}
@@ -451,6 +451,7 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
                             }}
                             isFloating={!showContent}
                             index={i}
+                            isListPage
                         />
                     );
                 })}

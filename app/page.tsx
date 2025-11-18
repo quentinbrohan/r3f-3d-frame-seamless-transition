@@ -4,6 +4,7 @@ import { Preload } from "@/components/webgl/Preload"
 import { Loader, Stats } from "@react-three/drei"
 import { Canvas, CanvasProps } from "@react-three/fiber"
 import dynamic from "next/dynamic"
+import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 
 const MainScene = dynamic(() => import('@/components/MainScene'), {
@@ -31,6 +32,8 @@ export const SHARED_CANVAS_PROPS: CanvasProps = {
 }
 
 export default function Component() {
+  const params = useSearchParams();
+  const showDebug = params.get('debug') === 'true'
 
   return (
     <>
@@ -41,7 +44,7 @@ export default function Component() {
         >
           <Suspense>
             <MainScene />
-            {/* <Stats /> */}
+            {showDebug && < Stats />}
             <Preload />
           </Suspense>
         </Canvas>
