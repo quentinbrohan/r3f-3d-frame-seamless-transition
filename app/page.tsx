@@ -14,43 +14,47 @@ const MainScene = dynamic(() => import('@/components/MainScene'), {
 export const SHARED_CANVAS_PROPS: CanvasProps = {
   linear: true,
   shadows: true,
+  dpr: [1, 2],
   camera: {
     position: [0, 0, 0]
   },
   gl: {
     precision: 'highp',
     powerPreference: 'high-performance',
-    // alpha: false,
   },
   style: {
-    // position: 'fixed',
-    // inset: 0,
-    // maxWidth: '100vw',
-    // maxHeight: '100vh',
     pointerEvents: 'all'
   }
 }
 
-export default function Component() {
+// Separate component that uses useSearchParams
+function SceneWithDebug() {
   const params = useSearchParams();
   const showDebug = params.get('debug') === 'true'
 
   return (
+    <Canvas
+      {...SHARED_CANVAS_PROPS}
+      className="relative z-10"
+    >
+      <Suspense>
+        <MainScene />
+        {showDebug && <Stats />}
+        <Preload />
+      </Suspense>
+    </Canvas>
+  )
+}
+
+export default function Component() {
+  return (
     <>
       <div className="w-full h-dvh bg-black relative overflow-hidden">
-        <Canvas
-          {...SHARED_CANVAS_PROPS}
-          className="relative z-10"
-        >
-          <Suspense>
-            <MainScene />
-            {showDebug && < Stats />}
-            <Preload />
-          </Suspense>
-        </Canvas>
+        <Suspense fallback={<div className="w-full h-dvh bg-black" />}>
+          <SceneWithDebug />
+        </Suspense>
       </div>
-      {/* <Loader /> */}
+      <Loader />
     </>
-
   )
 }
