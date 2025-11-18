@@ -257,7 +257,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
     return (
         <div
             ref={containerRef}
-            className="fixed inset-0 z-40 bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible flex flex-col"
+            className="fixed inset-0 z-40 min-h-[100svh] h-[100vh] max-h-[100svh] bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible flex flex-col"
             data-overlay-container
             role="dialog"
             aria-modal="true"
@@ -400,7 +400,7 @@ const NextProjectSection = ({
     <section
         className={cn(
             "relative flex items-center justify-center bg-black text-center px-4",
-            "min-h-screen"
+            "h-dvh"
         )}
         aria-label={`Next project: ${title}`}
         data-next-project-container
@@ -431,7 +431,9 @@ const NextProjectSection = ({
                 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[3rem] sm:text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
                 style={{
                     color: 'white',
-                    WebkitTextStroke: '1px white'
+                    WebkitTextStroke: '1px white',
+                    zIndex: 1
+
                 }}
             >
                 {title}
@@ -449,7 +451,7 @@ const NextProjectSection = ({
             </h2>
         </div>
 
-        <div className={cn("w-full z-[1]", "h-screen")}>
+        <div className={cn("w-full z-[1]", "h-full")}>
             <Suspense fallback={null}>
                 <Canvas {...SHARED_CANVAS_PROPS}>
                     <group name="Lights">

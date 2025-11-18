@@ -22,13 +22,13 @@ export const SHARED_CANVAS_PROPS: CanvasProps = {
     powerPreference: 'high-performance',
     // alpha: false,
   },
-  // style: {
-  //   position: 'fixed',
-  //   inset: 0,
-  //   maxWidth: '100vw',
-  //   maxHeight: '100vh',
-  //   pointerEvents: 'all'
-  // }
+  style: {
+    // position: 'fixed',
+    // inset: 0,
+    // maxWidth: '100vw',
+    // maxHeight: '100vh',
+    pointerEvents: 'all'
+  }
 }
 
 export default function Component() {
@@ -37,7 +37,7 @@ export default function Component() {
 
   return (
     <>
-      <div className="w-full h-[100svh] bg-black relative">
+      <div className="w-full h-dvh bg-black relative overflow-hidden">
         <Canvas
           {...SHARED_CANVAS_PROPS}
           className="relative z-10"
