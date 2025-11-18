@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { useGSAP } from '@gsap/react'
-import gsap from 'gsap'
-import { Canvas } from '@react-three/fiber'
-import { Environment } from '@react-three/drei'
-import { CustomFrame, DEFAULT_FRAME_SCALE } from './webgl/CustomFrame'
 import { Project, ProjectCategories, PROJECTS } from '@/app/data'
-import { animateFadeUp, animateFadeUpOut, MOTION_CONFIG } from '@/lib/animations'
 import { SHARED_CANVAS_PROPS } from '@/app/page'
-import { CAROUSEL_RADIUS } from './MainScene'
-import * as THREE from "three";
 import { useIsMobile } from '@/hooks/use-mobile'
+import { animateFadeUp, animateFadeUpOut, MOTION_CONFIG } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { useGSAP } from '@gsap/react'
+import { Environment } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber'
+import gsap from 'gsap'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import * as THREE from "three"
+import { CAROUSEL_RADIUS } from './MainScene'
+import { CustomFrame, DEFAULT_FRAME_SCALE } from './webgl/CustomFrame'
 
 const AVAILABILITIES_OPTIONS = {
     AVAILABLE: 'AVAILABLE',
@@ -282,7 +282,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
             <div>
                 <ProjectHero project={currentProject} tags={tags} metadata={metadata} />
                 <ProjectImages images={currentProject.images} projectName={currentProject.name} />
-                {Boolean(nextProject) && (
+                {(Boolean(nextProject) && isVisible) && (
                     <NextProjectSection
                         project={nextProject}
                         title={nextProjectTitle}
@@ -454,10 +454,13 @@ const NextProjectSection = ({
 
         <div className={cn("w-full z-[1]", "h-screen")}>
             <Canvas {...SHARED_CANVAS_PROPS}>
-                <ambientLight intensity={0.2} />
-                <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-                <pointLight position={[-5, 5, 5]} intensity={0.5} />
-                <pointLight position={[5, -5, 5]} intensity={0.3} />
+                <group name="Lights">
+                    <ambientLight intensity={0.2} />
+                    <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
+                    <pointLight position={[-5, 5, 5]} intensity={0.5} />
+                    <pointLight position={[5, -5, 5]} intensity={0.3} />
+                </group>
+
                 <Environment
                     files="/webgl/hdri/potsdamer_platz_1k.hdr"
                 // files="/webgl/hdri/studio_small_01_1k.hdr"

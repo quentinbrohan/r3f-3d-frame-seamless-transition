@@ -1,6 +1,5 @@
 import { shaderMaterial } from "@react-three/drei";
-import { ConstructorRepresentation, extend } from "@react-three/fiber";
-import * as THREE from "three";
+import { extend } from "@react-three/fiber";
 
 const TransitionMaterial = shaderMaterial(
   {
@@ -16,6 +15,8 @@ const TransitionMaterial = shaderMaterial(
   }
   `,
   `
+  precision mediump float;
+
   uniform sampler2D texture1;
   uniform sampler2D texture2;
   uniform float transition;

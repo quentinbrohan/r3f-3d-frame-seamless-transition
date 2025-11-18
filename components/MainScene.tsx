@@ -41,6 +41,12 @@ const useProjectTextures = (imageUrls: string[]) => {
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.needsUpdate = true;
         });
+
+        return () => {
+            textures.forEach((texture) => {
+                texture.dispose();
+            });
+        };
     }, [textures]);
 
     return textures;
@@ -49,7 +55,6 @@ const useProjectTextures = (imageUrls: string[]) => {
 const MainScene: React.FC = () => {
     const textures = useProjectTextures(projectsMainImages);
     const viewportWidth = useThree((state) => state.size.width);
-    const gl = useThree((state) => state.gl);
     const isMobile = useIsMobile();
 
     const frameRefs = useRef<Array<THREE.Group | null>>([]);
@@ -60,11 +65,6 @@ const MainScene: React.FC = () => {
     const transitionRef = useRef(0);
     const targetRotation = useRef(CAROUSEL_INITIAL_ROTATION_OFFSET);
     const currentIndexRef = useRef(0);
-    const swipeStateRef = useRef({
-        startX: 0,
-        startY: 0,
-        isSwiping: false,
-    });
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentProject, setCurrentProject] = useState<Project>(PROJECTS[0]);
@@ -277,59 +277,15 @@ const MainScene: React.FC = () => {
         updateTransitionTextures(initial, next, 0);
     }, [textures.length, updateTransitionTextures]);
 
-    useEffect(() => {
-        if (!isMobile || showContent) return;
-        const element = gl?.domElement;
-        if (!element) return;
-
-        const swipeState = swipeStateRef.current;
-
-        const handleTouchStart = (event: TouchEvent) => {
-            if (event.touches.length !== 1) return;
-            swipeState.startX = event.touches[0].clientX;
-            swipeState.startY = event.touches[0].clientY;
-            swipeState.isSwiping = true;
-        };
-
-        const handleTouchMove = (event: TouchEvent) => {
-            if (!swipeState.isSwiping || event.touches.length !== 1) return;
-            const deltaX = event.touches[0].clientX - swipeState.startX;
-            const deltaY = event.touches[0].clientY - swipeState.startY;
-
-            if (Math.abs(deltaY) > Math.abs(deltaX)) {
-                swipeState.isSwiping = false;
-                return;
-            }
-
-            if (Math.abs(deltaX) > 50) {
-                if (deltaX > 0) {
-                    handlePrev();
-                } else {
-                    handleNext();
-                }
-                swipeState.isSwiping = false;
-            }
-        };
-
-        const handleTouchEnd = () => {
-            swipeState.isSwiping = false;
-        };
-
-        element.addEventListener("touchstart", handleTouchStart, { passive: true });
-        element.addEventListener("touchmove", handleTouchMove);
-        element.addEventListener("touchend", handleTouchEnd);
-
-        return () => {
-            element.removeEventListener("touchstart", handleTouchStart);
-            element.removeEventListener("touchmove", handleTouchMove);
-            element.removeEventListener("touchend", handleTouchEnd);
-        };
-    }, [gl, handleNext, handlePrev, isMobile, showContent]);
-
     useFrame(() => {
         if (!groupRef.current) return;
         const rot = groupRef.current.rotation.y;
-        groupRef.current.rotation.y += (targetRotation.current - rot) * 0.08;
+        const delta = targetRotation.current - rot;
+
+        // Only update if there's meaningful rotation difference
+        if (Math.abs(delta) > 0.001) {
+            groupRef.current.rotation.y += delta * 0.08;
+        }
     });
 
     useEffect(() => {
@@ -346,7 +302,7 @@ const MainScene: React.FC = () => {
 
     return (
         <>
-            <EnvironmentPlanes frontRef={meshRefFront} backRef={meshRefBack} />
+            <EnvironmentPlanes frontRef={meshRefFront} backRef={meshRefBack} isVisible={!showContent} />
 
             <FramesCarousel
                 images={projectsMainImages}
@@ -358,6 +314,7 @@ const MainScene: React.FC = () => {
                 isMobile={isMobile}
                 shouldFollowCursor={!showContent}
                 onFrameClick={handleStartMovement}
+                currentIndex={currentIndex}
             />
 
             <LightingRig />
@@ -383,10 +340,11 @@ export default MainScene;
 interface EnvironmentPlanesProps {
     frontRef: React.RefObject<THREE.ShaderMaterial | null>;
     backRef: React.RefObject<THREE.ShaderMaterial | null>;
+    isVisible: boolean;
 }
 
-const EnvironmentPlanes: React.FC<EnvironmentPlanesProps> = ({ frontRef, backRef }) => (
-    <group name="Environments">
+const EnvironmentPlanes: React.FC<EnvironmentPlanesProps> = ({ frontRef, backRef, isVisible }) => (
+    <group name="Environments" visible={isVisible}>
         <mesh position={[0, 0, -5]}>
             <planeGeometry args={[20, 20]} />
             <transitionMaterial ref={backRef} toneMapped={false} />
@@ -409,6 +367,7 @@ interface FramesCarouselProps {
     isMobile: boolean;
     shouldFollowCursor: boolean;
     onFrameClick: () => void;
+    currentIndex: number;
 }
 
 const FramesCarousel: React.FC<FramesCarouselProps> = ({
@@ -421,10 +380,11 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
     isMobile,
     shouldFollowCursor,
     onFrameClick,
+    currentIndex,
 }) => (
     <CubeCamera
-        frames={Infinity}
-        resolution={isMobile ? 64 : 128}
+        frames={showContent ? 1 : Infinity}
+        resolution={showContent ? 32 : isMobile ? 64 : 128}
         near={0.1}
         far={1000}
         position={[0, 0, 2]}
@@ -452,6 +412,7 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
                             isFloating={!showContent}
                             index={i}
                             isListPage
+                            visible={!showContent || i === currentIndex}
                         />
                     );
                 })}
