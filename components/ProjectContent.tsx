@@ -144,7 +144,6 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         const container = gsap.utils.selector(containerRef)
 
         const backToIndexEl = container('[data-close-button]')
-        const backgroundImageEl = container('[data-background-image]')
         const titleEl = container('[data-title]')
         const descriptionEl = container('[data-description]')
         const tagEls = container('[data-tag-item]')
@@ -154,7 +153,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         const nextProjectNameColorEl = container('[data-next-project-name-color]')
         const nextProjectNameStrokeEl = container('[data-next-project-name-stroke]')
 
-        const alphaEls = [containerRef, backgroundImageEl]
+        const alphaEls = [containerRef]
         const fadeEls = [backToIndexEl, titleEl, descriptionEl, tagEls, metadataEls, imageEls, nextProjectTitleEl, nextProjectNameColorEl, nextProjectNameStrokeEl].filter(Boolean)
         alphaEls.forEach((el) => gsap.set(el, { autoAlpha: 1 }))
         fadeEls.forEach((el) => gsap.set(el, { opacity: 1, y: 0 }))
@@ -177,25 +176,6 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
 
                 }
             ))
-        tl.add(
-            gsap.fromTo(
-                backgroundImageEl,
-                {
-                    visibility: 'hidden',
-                    opacity: 0,
-                    // filter: 'blur(20px) brightness(0.5)',
-
-                },
-                {
-                    visibility: 'visible',
-                    opacity: 0,
-                    autoAlpha: 1,
-                    duration: MOTION_CONFIG.DURATION.OVERLAY,
-                    ease: MOTION_CONFIG.EASING.OVERLAY,
-                    // filter: 'blur(20px) brightness(0.3)',
-
-                }
-            ), '<')
         const staggerDelay = MOTION_CONFIG.STAGGER_DELAY.MD;
         tl.add(animateFadeUp(backToIndexEl, {
             y: MOTION_CONFIG.Y_OFFSET.LG,
@@ -277,7 +257,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
     return (
         <div
             ref={containerRef}
-            className="fixed inset-0 z-40 bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible"
+            className="fixed inset-0 z-[40] bg-black/60 text-white overflow-y-auto overflow-x-hidden w-screen pt-20 invisible"
             data-overlay-container
             role="dialog"
             aria-modal="true"
@@ -295,8 +275,6 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
             >
                 <span aria-hidden="true">←</span> Return to Index
             </button>
-
-            <OverlayBackground image={currentProject.images[0]} />
 
             <div>
                 <ProjectHero project={currentProject} tags={tags} metadata={metadata} />
@@ -403,18 +381,6 @@ const ProjectImages = ({ images, projectName }: { images: string[]; projectName:
     </section>
 )
 
-const OverlayBackground = ({ image }: { image: string }) => (
-    <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-            backgroundImage: `url(${image})`,
-            filter: 'blur(20px) brightness(0.3)',
-            transform: 'scale(1.2)',
-        }}
-        data-background-image={image}
-    />
-)
-
 interface NextProjectSectionProps {
     project: Project;
     title: string;
@@ -485,7 +451,11 @@ const NextProjectSection = ({
                 <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
                 <pointLight position={[-5, 5, 5]} intensity={0.5} />
                 <pointLight position={[5, -5, 5]} intensity={0.3} />
-                <Environment preset="city" />
+                <Environment
+                    files="/webgl/hdri/potsdamer_platz_1k.hdr"
+                // files="/webgl/hdri/studio_small_01_1k.hdr"
+                // environmentIntensity={1.4}
+                />
                 <CustomFrame
                     index={0}
                     image={project.images[0]}
