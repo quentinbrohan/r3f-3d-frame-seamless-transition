@@ -11,6 +11,7 @@ import { useCursor } from '@react-three/drei'
 import { mergeRefs } from '@/lib/utils'
 import { useStore } from '@/lib/store'
 import { useShallow } from 'zustand/react/shallow'
+import gsap from 'gsap'
 
 export const DEFAULT_FRAME_SCALE = 0.02;
 // from planeRef geometry computeBoundingBox
@@ -40,6 +41,7 @@ interface CustomFrameProps {
     isFollowingCursor?: boolean;
     index: number;
     isListPage?: boolean;
+    skipUpdates?: boolean;
 }
 
 export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameProps) {
@@ -52,6 +54,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         ref,
         index,
         isListPage = false,
+        skipUpdates = false,
     } = props
     const groupRef = useRef<THREE.Group | null>(null)
     const planeRef = useRef<THREE.Mesh | null>(null)
@@ -101,21 +104,39 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
         set(false)
     }
 
-
     if (texture) texture.flipY = false
 
-    const handleMouseMove = (event: any) => {
-        mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1
-        mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1
-    }
-
-    useFrame((state) => {
+    // Add this effect to handle skipUpdates transitions
+    useEffect(() => {
         if (!groupRef.current) return
 
+        if (skipUpdates) {
+            // Calculate neutral rotation (without cursor influence)
+            const target = lookAtCamera ? camera.position : new THREE.Vector3(0, 0, 0)
+            const tempObject = new THREE.Object3D()
+            tempObject.position.copy(groupRef.current.position)
+            tempObject.lookAt(target)
+            const neutralQuat = tempObject.quaternion.clone()
+
+            // Animate to neutral rotation
+            gsap.to(groupRef.current.quaternion, {
+                x: neutralQuat.x,
+                y: neutralQuat.y,
+                z: neutralQuat.z,
+                w: neutralQuat.w,
+                duration: 0.6,
+                ease: 'power2.out'
+            })
+        }
+    }, [skipUpdates, lookAtCamera, camera])
+
+    useFrame((state) => {
+        if (!groupRef.current || skipUpdates) return
+
+        // Existing animation logic - keep ALL of this:
         const elapsed = state.clock.elapsedTime
 
         const targetY = isFloating ? Math.sin(elapsed * 0.6) * 0.15 : 0
-
         groupRef.current.position.y += (targetY - groupRef.current.position.y) * 0.1
 
         const target = lookAtCamera ? camera.position : new THREE.Vector3(0, 0, 0)
@@ -142,39 +163,13 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
             lookAtQuat.multiply(offsetQuat)
         }
 
-        groupRef.current.quaternion.slerp(lookAtQuat, 0.125) // 0.125 = lerp speed (adjust for smoothness)
-    })
-
-    // debug only to get frame width
-    // useEffect(() => {
-    //     if (!planeRef.current) return;
-
-    //     const mesh = planeRef.current;
-
-    //     // compute bounding box *of the geometry*
-    //     const geo = mesh.geometry;
-    //     geo.computeBoundingBox();
-
-    //     const { boundingBox } = geo;
-    //     const width = boundingBox.max.x - boundingBox.min.x;
-    //     const height = boundingBox.max.y - boundingBox.min.y;
-
-    //     console.log("width:", width, "height:", height);
-
-    //     // size including scale/transform
-    //     const box = new THREE.Box3().setFromObject(planeRef.current);
-    //     const size = new THREE.Vector3();
-    //     box.getSize(size);
-
-    //     console.log("scaled width:", size.x);
-    //     console.log("scaled height:", size.y);
-    // }, []);
+        groupRef.current.quaternion.slerp(lookAtQuat, 0.125)
+    }, 0)
 
     return (
         <group {...props} dispose={null}
             scale={DEFAULT_FRAME_SCALE}
             ref={mergeRefs(groupRef, ref)}
-            onPointerMove={handleMouseMove}
             name={`Frame ${index}`}
         >
             <mesh
@@ -193,7 +188,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
                     metalness={1}
                     roughness={0.1}
                     envMap={envMap}
-                    envMapIntensity={3}
+                    envMapIntensity={2.5}
 
                 />
             </mesh>

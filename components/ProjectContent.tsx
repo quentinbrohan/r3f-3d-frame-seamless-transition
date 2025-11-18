@@ -7,7 +7,7 @@ import { useGSAP } from '@gsap/react'
 import { Environment } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import gsap from 'gsap'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from "three"
 import { CAROUSEL_RADIUS } from './MainScene'
 import { CustomFrame, DEFAULT_FRAME_SCALE } from './webgl/CustomFrame'
@@ -121,10 +121,13 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
             ease: MOTION_CONFIG.EASING.FRAME_SCALE
         }, 0.2)
 
+        const transitionTiming = isMobile ? 0.4 : 0.6
+
+
         tl.add(() => {
             onNext()
             setIsTransitioning(false)
-        }, 0.6) // todo adjust based on scale progress since different on desktop and mobile
+        }, transitionTiming) // todo adjust based on scale progress since different on desktop and mobile
 
 
         tl.add(() => {
@@ -158,7 +161,7 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
 
         const alphaEls = [containerRef]
         const fadeEls = [backToIndexEl, titleEl, descriptionEl, tagEls, metadataEls, imageEls, nextProjectTitleEl, nextProjectNameColorEl, nextProjectNameStrokeEl].filter(Boolean)
-        alphaEls.forEach((el) => gsap.set(el, { autoAlpha: 1 }))
+        alphaEls.forEach((el) => gsap.set(el, { opacity: 1, visibility: 'visible' }))
         fadeEls.forEach((el) => gsap.set(el, { opacity: 1, y: 0 }))
 
         tl.add(
@@ -167,12 +170,11 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
                 {
                     visibility: 'hidden',
                     opacity: 0,
-                    backdropFilter: 'blur(0px)'
+                    backdropFilter: 'blur(0px)',
                 },
                 {
                     visibility: 'visible',
                     opacity: 1,
-                    autoAlpha: 1,
                     duration: MOTION_CONFIG.DURATION.OVERLAY,
                     ease: MOTION_CONFIG.EASING.OVERLAY,
                     backdropFilter: 'blur(10px)'
@@ -215,11 +217,6 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         }
 
         timelineRef.current = tl;
-
-        return () => {
-            tl.kill()
-        }
-
     }, {
         scope: containerRef,
         dependencies: [isVisible, currentProject]
@@ -239,11 +236,11 @@ export function ProjectContent({ isVisible, onClose, currentProject, onNext }: P
         [currentProject, isVisible]
     )
 
-    useEffect(() => {
-        if (isVisible && containerRef.current) {
-            containerRef.current.scrollTop = 0
-        }
-    }, [isVisible])
+    // useEffect(() => {
+    //     if (isVisible && containerRef.current) {
+    //         containerRef.current.scrollTop = 0
+    //     }
+    // }, [isVisible])
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -453,28 +450,30 @@ const NextProjectSection = ({
         </div>
 
         <div className={cn("w-full z-[1]", "h-screen")}>
-            <Canvas {...SHARED_CANVAS_PROPS}>
-                <group name="Lights">
-                    <ambientLight intensity={0.2} />
-                    <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-                    <pointLight position={[-5, 5, 5]} intensity={0.5} />
-                    <pointLight position={[5, -5, 5]} intensity={0.3} />
-                </group>
+            <Suspense fallback={null}>
+                <Canvas {...SHARED_CANVAS_PROPS}>
+                    <group name="Lights">
+                        <ambientLight intensity={0.2} />
+                        <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
+                        <pointLight position={[-5, 5, 5]} intensity={0.5} />
+                        <pointLight position={[5, -5, 5]} intensity={0.3} />
+                    </group>
 
-                <Environment
-                    files="/webgl/hdri/potsdamer_platz_1k.hdr"
-                // files="/webgl/hdri/studio_small_01_1k.hdr"
-                // environmentIntensity={1.4}
-                />
-                <CustomFrame
-                    index={0}
-                    image={project.images[0]}
-                    lookAtCamera={!isTransitioning}
-                    ref={frameRef}
-                    key={project.id}
-                    position={[0, 0, -(CAROUSEL_RADIUS / 2)]}
-                />
-            </Canvas>
+                    <Environment
+                        files="/webgl/hdri/potsdamer_platz_1k.hdr"
+                    // files="/webgl/hdri/studio_small_01_1k.hdr"
+                    // environmentIntensity={1.4}
+                    />
+                    <CustomFrame
+                        index={0}
+                        image={project.images[0]}
+                        lookAtCamera={!isTransitioning}
+                        ref={frameRef}
+                        key={project.id}
+                        position={[0, 0, -(CAROUSEL_RADIUS / 2)]}
+                    />
+                </Canvas>
+            </Suspense>
         </div>
     </section>
 )

@@ -74,7 +74,7 @@ const MainScene: React.FC = () => {
     const step = useMemo(() => (2 * Math.PI) / numFrames, [numFrames]);
     const carouselRadius = useMemo(
         () => CAROUSEL_RADIUS,
-        [isMobile]
+        []
     );
 
     useEffect(() => {
@@ -172,14 +172,14 @@ const MainScene: React.FC = () => {
         const next = (currentIndexRef.current + 1) % textures.length;
         resetListFrameHover()
         animateTransition(next, 1);
-    }, [animateTransition, textures.length]);
+    }, [animateTransition, textures.length, resetListFrameHover]);
 
     const handlePrev = useCallback(() => {
         if (!textures.length) return;
         const prev = (currentIndexRef.current - 1 + textures.length) % textures.length;
         resetListFrameHover()
         animateTransition(prev, -1);
-    }, [animateTransition, textures.length]);
+    }, [animateTransition, textures.length, resetListFrameHover]);
 
     const handleStartMovement = useCallback(
         (skipAnimation = false) => {
@@ -212,7 +212,7 @@ const MainScene: React.FC = () => {
                 },
             });
         },
-        [viewportWidth]
+        [viewportWidth, resetListFrameHover]
     );
 
     const handleNextFromOverlay = useCallback(() => {
@@ -384,8 +384,11 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
 }) => (
     <CubeCamera
         frames={showContent ? 1 : Infinity}
-        resolution={showContent ? 32 : isMobile ? 64 : 128}
-        near={0.1}
+        // resolution={showContent ? 32 : isMobile ? 64 : 128}
+        resolution={showContent
+            ? (isMobile ? 256 : 384)  // Higher for scaled-up frame
+            : (isMobile ? 64 : 128)   // Lower for carousel
+        } near={0.1}
         far={1000}
         position={[0, 0, 2]}
     >
@@ -403,7 +406,8 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
                             image={img}
                             position={[x, 0, z]}
                             rotation={[0, rotationY, 0]}
-                            envMap={texture}
+                            // envMap={texture}
+                            envMap={(!showContent || i === currentIndex) ? texture : null}
                             onClick={() => onFrameClick()}
                             isFollowingCursor={shouldFollowCursor}
                             ref={(el) => {
@@ -413,6 +417,7 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
                             index={i}
                             isListPage
                             visible={!showContent || i === currentIndex}
+                            skipUpdates={showContent && i !== currentIndex}
                         />
                     );
                 })}
