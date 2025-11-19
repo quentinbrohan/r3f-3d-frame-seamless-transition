@@ -428,8 +428,9 @@ const NextProjectSection = ({
             </div>
             <h2
                 data-next-project-name-color
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[3rem] sm:text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-light text-white leading-none"
                 style={{
+                    fontSize: 'clamp(4rem, 8vw, 12rem)',
                     color: 'white',
                     WebkitTextStroke: '1px white',
                     zIndex: 1
@@ -440,8 +441,9 @@ const NextProjectSection = ({
             </h2>
             <h2
                 data-next-project-name-stroke
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[3rem] sm:text-[8rem] lg:text-[12rem] font-light text-white leading-none mb-8 text-nowrap"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-light text-white leading-none"
                 style={{
+                    fontSize: 'clamp(4rem, 8vw, 12rem)',
                     color: 'transparent',
                     WebkitTextStroke: '1px white',
                     zIndex: 2
@@ -453,7 +455,7 @@ const NextProjectSection = ({
 
         <div className={cn("w-full z-[1]", "h-full")}>
             <Suspense fallback={null}>
-                <Canvas {...SHARED_CANVAS_PROPS}>
+                <Canvas {...SHARED_CANVAS_PROPS} camera={{ position: [0, 0, 0.5] }}>
                     <group name="Lights">
                         <ambientLight intensity={0.2} />
                         <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
