@@ -3,9 +3,10 @@
 import { useStore } from '@/lib/store'
 import { useThree } from '@react-three/fiber'
 import { useEffect } from 'react'
-import type * as THREE from 'three'
+import * as THREE from 'three'
 import { CubeCamera, WebGLCubeRenderTarget } from 'three'
 import { useShallow } from 'zustand/react/shallow'
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
 
 export function Preload() {
     const gl = useThree((state) => state.gl)
@@ -20,6 +21,16 @@ export function Preload() {
         async function load() {
             console.log('WebGL: Preloading...')
             console.time('WebGL: Preload took:')
+
+            // Preload HDR environment used in nested canvas
+            await new Promise((resolve, reject) => {
+                new HDRLoader().load(
+                    '/webgl/hdri/potsdamer_platz_1k.hdr',
+                    resolve,
+                    undefined,
+                    reject
+                )
+            })
 
             const invisible: THREE.Object3D[] = []
             scene.traverse((object: THREE.Object3D) => {

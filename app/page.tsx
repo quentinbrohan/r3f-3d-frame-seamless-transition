@@ -1,7 +1,8 @@
 "use client"
 
 import { Preload } from "@/components/webgl/Preload"
-import { Loader, Stats } from "@react-three/drei"
+import { useStore } from "@/lib/store"
+import { Stats } from "@react-three/drei"
 import { Canvas, CanvasProps } from "@react-three/fiber"
 import dynamic from "next/dynamic"
 import { useSearchParams } from "next/navigation"
@@ -47,6 +48,8 @@ function SceneWithDebug() {
 }
 
 export default function Component() {
+  const isLoaderLoaded = useStore((state) => state.isLoaderLoaded)
+
   return (
     <>
       <div className="w-full h-dvh bg-black relative overflow-hidden">
@@ -54,7 +57,11 @@ export default function Component() {
           <SceneWithDebug />
         </Suspense>
       </div>
-      <Loader />
+      {!isLoaderLoaded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="text-white">Loading...</div>
+        </div>
+      )}
     </>
   )
 }
