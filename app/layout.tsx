@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Header from '@/components/dom/Header'
-import { GSAP } from '@/components/GSAP'
+import { GSAP } from '@/components/dom/GSAP'
 
 export const metadata: Metadata = {
   title: 'R3F 3D Frame Seamless Transition',

@@ -1,5 +1,6 @@
 "use client"
 
+import { Loader } from "@/components/dom/Loader"
 import { Preload } from "@/components/webgl/Preload"
 import { useStore } from "@/lib/store"
 import { Stats } from "@react-three/drei"
@@ -57,11 +58,7 @@ export default function Component() {
           <SceneWithDebug />
         </Suspense>
       </div>
-      {!isLoaderLoaded && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-          <div className="text-white">Loading...</div>
-        </div>
-      )}
+      <Loader isLoading={!isLoaderLoaded} />
     </>
   )
 }
