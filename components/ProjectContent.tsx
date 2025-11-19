@@ -456,7 +456,7 @@ const NextProjectSection = ({
         <div className={cn("w-full z-[1]", "h-full")}>
             <Suspense fallback={null}>
                 <Canvas {...SHARED_CANVAS_PROPS} camera={{ position: [0, 0, 0.5] }}>
-                    <group name="Lights">
+                    <group name="Next Project Lights">
                         <ambientLight intensity={0.2} />
                         <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
                         <pointLight position={[-5, 5, 5]} intensity={0.5} />

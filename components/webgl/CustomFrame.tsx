@@ -173,7 +173,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
             name={`Frame ${index}`}
         >
             <mesh
-                name="model"
+                name="Frame Model"
                 castShadow
                 receiveShadow
                 geometry={nodes.model.geometry}
@@ -194,7 +194,7 @@ export function CustomFrame(props: JSX.IntrinsicElements['group'] & CustomFrameP
             </mesh>
             <mesh
                 ref={planeRef}
-                name="Plane002"
+                name="Frame Content Plane"
                 castShadow
                 receiveShadow
                 geometry={nodes.Plane002.geometry}

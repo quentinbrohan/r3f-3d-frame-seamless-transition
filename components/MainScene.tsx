@@ -345,12 +345,12 @@ interface EnvironmentPlanesProps {
 
 const EnvironmentPlanes: React.FC<EnvironmentPlanesProps> = ({ frontRef, backRef, isVisible }) => (
     <group name="Environments" visible={isVisible}>
-        <mesh position={[0, 0, -5]}>
+        <mesh position={[0, 0, -5]} name="Plane Facing Frame (behind camera)">
             <planeGeometry args={[20, 20]} />
             <transitionMaterial ref={backRef} toneMapped={false} />
         </mesh>
 
-        <mesh position={[0, 0, 5]} rotation={[0, Math.PI, 0]}>
+        <mesh position={[0, 0, 5]} rotation={[0, Math.PI, 0]} name="Plane Facing Camera">
             <planeGeometry args={[20, 20]} />
             <transitionMaterial ref={frontRef} toneMapped={false} />
         </mesh>
@@ -393,7 +393,7 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
         position={[0, 0, 2]}
     >
         {(texture) => (
-            <group ref={groupRef}>
+            <group ref={groupRef} name="Frames Carousel" >
                 {images.map((img, i) => {
                     const angle = -(i / numFrames) * Math.PI * 2;
                     const x = Math.sin(angle) * radius;
@@ -427,7 +427,7 @@ const FramesCarousel: React.FC<FramesCarouselProps> = ({
 );
 
 const LightingRig = () => (
-    <group name="Lights">
+    <group name="Main Scene Lights">
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={2} />
         <pointLight position={[0, 5, -5]} intensity={0.8} />
