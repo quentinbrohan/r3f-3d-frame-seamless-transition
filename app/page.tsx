@@ -1,7 +1,6 @@
 "use client"
 
 import { Loader } from "@/components/dom/Loader"
-import MainScene from "@/components/MainScene"
 import { Preload } from "@/components/webgl/Preload"
 import { useStore } from "@/lib/store"
 import { Stats } from "@react-three/drei"
@@ -9,6 +8,10 @@ import { Canvas, CanvasProps } from "@react-three/fiber"
 import dynamic from "next/dynamic"
 import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
+
+const MainScene = dynamic(() => import('@/components/MainScene'), {
+  ssr: false,
+})
 
 export const SHARED_CANVAS_PROPS: CanvasProps = {
   linear: true,
